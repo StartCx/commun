@@ -472,8 +472,7 @@ I2C_DETECT_PROC_GROUP0_2:
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP0_2_1:
-	if( Shell_Task.Register.R5_Object == 0){
-		Shell_Task.I2C_Driver = &I2C2_Master;
+	if( Shell_Task.Register.R5_Object < I2C_BUS_SUM){
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP1;
 	}else{
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP0_3;
@@ -496,22 +495,22 @@ I2C_DETECT_PROC_GROUP0_4:
 	}
 	return CORE_RUNNING;	
 I2C_DETECT_PROC_GROUP1:
-	if( I2C_M_Bitbang_Open(Shell_Task.I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP2;
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP2:
-	I2C_M_Bitbang_Detect(Shell_Task.I2C_Driver, Shell_Task.Dev_Addr);
+	I2Cx_Detect(Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr);
 	Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP3;
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP3:
-	if( I2C_M_Bitbang_Endp(Shell_Task.I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(Shell_Task.Register.R5_Object) == CORE_DONE){
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP4;
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP4:
-	Shell_Task.Register.R0_Result = I2C_M_Bitbang_Result(Shell_Task.I2C_Driver);
-	I2C_M_Bitbang_Close(Shell_Task.I2C_Driver);
+	Shell_Task.Register.R0_Result = I2Cx_Result(Shell_Task.Register.R5_Object);
+	I2Cx_Close(Shell_Task.Register.R5_Object);
 	if( Shell_Task.Register.R0_Result == NO_ERROR ){
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP5;
 	}else if( Shell_Task.Register.R0_Result == BUS_ERROR){
@@ -644,8 +643,7 @@ I2C_DUMP_PROC_GROUP0_2:
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP0_2_1:
-	if( Shell_Task.Register.R5_Object == 0){
-		Shell_Task.I2C_Driver = &I2C2_Master;
+	if( Shell_Task.Register.R5_Object < I2C_BUS_SUM){
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP0_3;
 	}else{
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP13;
@@ -687,22 +685,22 @@ I2C_DUMP_PROC_GROUP4:
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP5:
-	if( I2C_M_Bitbang_Open(Shell_Task.I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP6;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP6:
-	I2C_M_Bitbang_Get(Shell_Task.I2C_Driver, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr, 1, &Shell_Task.Reg_Value[0], 1);
+	I2Cx_Get(Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr, 1, &Shell_Task.Reg_Value[0], 1);
 	Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP7;
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP7:
-	if( I2C_M_Bitbang_Endp(Shell_Task.I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(Shell_Task.Register.R5_Object) == CORE_DONE){
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP8;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP8:	
-	Shell_Task.Register.R0_Result = I2C_M_Bitbang_Result(Shell_Task.I2C_Driver);
-	I2C_M_Bitbang_Close(Shell_Task.I2C_Driver);
+	Shell_Task.Register.R0_Result = I2Cx_Result(Shell_Task.Register.R5_Object);
+	I2Cx_Close(Shell_Task.Register.R5_Object);
 	if( Shell_Task.Register.R0_Result == NO_ERROR ){
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP9;
 	}else{
@@ -884,8 +882,7 @@ I2C_GET_PROC_GROUP2:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP3:
-	if( Shell_Task.Register.R5_Object == 0){
-		Shell_Task.I2C_Driver = &I2C2_Master;
+	if( Shell_Task.Register.R5_Object < I2C_BUS_SUM){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP4;
 	}else{
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP22;
@@ -964,22 +961,22 @@ I2C_GET_PROC_GROUP14:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP15:
-	if( I2C_M_Bitbang_Open(Shell_Task.I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP16;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP16:
-	I2C_M_Bitbang_Get(Shell_Task.I2C_Driver, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr,Shell_Task.Reg_Size, &Shell_Task.Reg_Value[0], Shell_Task.Value_Length);
+	I2Cx_Get(Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr,Shell_Task.Reg_Size, &Shell_Task.Reg_Value[0], Shell_Task.Value_Length);
 	Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP17;
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP17:
-	if( I2C_M_Bitbang_Endp(Shell_Task.I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(Shell_Task.Register.R5_Object) == CORE_DONE){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP18;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP18:
-	Shell_Task.Register.R0_Result = I2C_M_Bitbang_Result(Shell_Task.I2C_Driver);
-	I2C_M_Bitbang_Close(Shell_Task.I2C_Driver);
+	Shell_Task.Register.R0_Result = I2Cx_Result(Shell_Task.Register.R5_Object);
+	I2Cx_Close(Shell_Task.Register.R5_Object);
 	if( Shell_Task.Register.R0_Result == NO_ERROR ){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP19;
 	}else{
@@ -1172,8 +1169,7 @@ I2C_SET_PROC_GROUP2:
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP3:
-	if( Shell_Task.Register.R5_Object == 0){
-		Shell_Task.I2C_Driver = &I2C2_Master;
+	if( Shell_Task.Register.R5_Object < I2C_BUS_SUM){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP4;
 	}else{
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP22;
@@ -1221,7 +1217,6 @@ I2C_SET_PROC_GROUP12:
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP10_Extra;
 	}
 	return CORE_RUNNING;
-	
 I2C_SET_PROC_GROUP10_Extra:
 	string_scanf(&sscanf_driver, argv[5]);
 	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
@@ -1244,7 +1239,6 @@ I2C_SET_PROC_GROUP13:
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
-	
 I2C_SET_PROC_GROUP14:
 	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
 		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
@@ -1254,22 +1248,22 @@ I2C_SET_PROC_GROUP14:
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP15:
-	if( I2C_M_Bitbang_Open(Shell_Task.I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP16;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP16:
-	I2C_M_Bitbang_Set(Shell_Task.I2C_Driver, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr, Shell_Task.Reg_Size, &Shell_Task.Reg_Value[0], 1);
+	I2Cx_Set(Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr, Shell_Task.Reg_Size, &Shell_Task.Reg_Value[0], 1);
 	Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP17;
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP17:
-	if( I2C_M_Bitbang_Endp(Shell_Task.I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(Shell_Task.Register.R5_Object) == CORE_DONE){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP18;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP18:
-	Shell_Task.Register.R0_Result = I2C_M_Bitbang_Result(Shell_Task.I2C_Driver);
-	I2C_M_Bitbang_Close(Shell_Task.I2C_Driver);
+	Shell_Task.Register.R0_Result = I2Cx_Result(Shell_Task.Register.R5_Object);
+	I2Cx_Close(Shell_Task.Register.R5_Object);
 	if( Shell_Task.Register.R0_Result == NO_ERROR ){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP19;
 	}else{
@@ -1426,8 +1420,7 @@ I2C_WRITE_PROC_GROUP2:
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP3:
-	if( Shell_Task.Register.R5_Object == 0){
-		Shell_Task.I2C_Driver = &I2C2_Master;
+	if( Shell_Task.Register.R5_Object < I2C_BUS_SUM){
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP4;
 	}else{
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP22;
@@ -1492,22 +1485,22 @@ I2C_WRITE_PROC_GROUP14:
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP15:
-	if( I2C_M_Bitbang_Open(Shell_Task.I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP16;
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP16:
-	I2C_M_Bitbang_Write(Shell_Task.I2C_Driver, Shell_Task.Dev_Addr, &Shell_Task.Reg_Value[0], Shell_Task.Register.R6_Count);
+	I2Cx_Write(Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, &Shell_Task.Reg_Value[0], Shell_Task.Register.R6_Count);
 	Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP17;
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP17:
-	if( I2C_M_Bitbang_Endp(Shell_Task.I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(Shell_Task.Register.R5_Object) == CORE_DONE){
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP18;
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP18:
-	Shell_Task.Register.R0_Result = I2C_M_Bitbang_Result(Shell_Task.I2C_Driver);
-	I2C_M_Bitbang_Close(Shell_Task.I2C_Driver);
+	Shell_Task.Register.R0_Result = I2Cx_Result(Shell_Task.Register.R5_Object);
+	I2Cx_Close(Shell_Task.Register.R5_Object);
 	if( Shell_Task.Register.R0_Result == NO_ERROR ){
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP19;
 	}else{
@@ -1673,8 +1666,7 @@ I2C_READ_PROC_GROUP2:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP3:
-	if( Shell_Task.Register.R5_Object == 0){
-		Shell_Task.I2C_Driver = &I2C2_Master;
+	if( Shell_Task.Register.R5_Object < I2C_BUS_SUM){
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP4;
 	}else{
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP22;
@@ -1729,22 +1721,22 @@ I2C_READ_PROC_GROUP14:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP15:
-	if( I2C_M_Bitbang_Open(Shell_Task.I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP16;
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP16:
-	I2C_M_Bitbang_Read(Shell_Task.I2C_Driver, Shell_Task.Dev_Addr, &Shell_Task.Reg_Value[0], Shell_Task.Value_Length);
+	I2Cx_Read(Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, &Shell_Task.Reg_Value[0], Shell_Task.Value_Length);
 	Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP17;
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP17:
-	if( I2C_M_Bitbang_Endp(Shell_Task.I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(Shell_Task.Register.R5_Object) == CORE_DONE){
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP18;
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP18:
-	Shell_Task.Register.R0_Result = I2C_M_Bitbang_Result(Shell_Task.I2C_Driver);
-	I2C_M_Bitbang_Close(Shell_Task.I2C_Driver);
+	Shell_Task.Register.R0_Result = I2Cx_Result(Shell_Task.Register.R5_Object);
+	I2Cx_Close(Shell_Task.Register.R5_Object);
 	if( Shell_Task.Register.R0_Result == NO_ERROR ){
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP19;
 	}else{

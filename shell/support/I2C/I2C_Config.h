@@ -10,22 +10,22 @@
 #include "I2C_Hardware.h"
 
 
-extern I2C_M_Hardware_t I2C1_Master;
-extern I2C_M_Bitbang_t  I2C2_Master;
-extern I2C_M_Software_t I2C3_Master;
+//extern I2C_M_Hardware_t I2C1_Master;
+//extern I2C_M_Bitbang_t  I2C2_Master;
+//extern I2C_M_Software_t I2C3_Master;
 extern I2C_S_Bitbang_t  I2C4_Slave;
 
 enum
 {
-	I2C1_BUS,
-	I2C2_BUS,
-	I2C3_BUS,
-	I2C4_BUS,
+	I2C1_M_HARDWARE = 1,
+	I2C2_M_BITBANG,
+	I2C3_M_SOFTWARE,
+	I2C4_S_BITBANG,
 	I2C_BUS_SUM,
 };
 
 /***********************************************************************************************/
-
+void I2Cx_Peripheral(uint8_t Bus);
 void I2Cx_Init(uint8_t Bus);
 void I2Cx_Close(uint8_t Bus);
 uint8_t I2Cx_Open(uint8_t Bus);

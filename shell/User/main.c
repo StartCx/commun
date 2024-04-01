@@ -37,10 +37,10 @@ int main(void)
 	
 	Usart1_Init(115200);//PA9,PA10
 	
-	I2C1_Master.Init(&I2C1_Master);
-	I2C2_Master.Init(&I2C2_Master);
-	I2C3_Master.Init(&I2C3_Master);
-	I2C4_Slave.Init(&I2C4_Slave);
+	I2Cx_Init(I2C1_M_HARDWARE);
+	I2Cx_Init(I2C2_M_BITBANG);
+	I2Cx_Init(I2C3_M_SOFTWARE);
+	I2Cx_Init(I2C4_S_BITBANG);
 /*	
 	for(int i =0; i < 255; i++){
 		if(I2C1_Master.Detect(&I2C1_Master,i) == NO_ERROR){
@@ -70,8 +70,6 @@ int main(void)
 	TIM4_Configuration();
 	Shell_Device.Init(&Shell_Device);
 	Led_Device.Init(&Led_Device);
-	I2C2_Master.Init(&I2C2_Master);
-	I2C4_Slave.Init(&I2C4_Slave);
 	//****************************************************************************/
 	
 	while(1)
@@ -106,11 +104,7 @@ void TIM4_IRQHandler(void)
 	servo_output_angle_task(&Servo_Output);//数字舵机
 	PWM_Out_Put(&Simulated_PWM);
 	Timer_IncTick();//10us一次
-	I2C2_Master.Register.R6_Count++;
-	if( I2C2_Master.Register.R6_Count > 3){
-		I2C2_Master.Register.R6_Count = 0;
-		I2C2_Master.Driver(&I2C2_Master);
-	}
-	I2C4_Slave.Driver(&I2C4_Slave);
+	I2Cx_Peripheral(I2C2_M_BITBANG);
+	I2Cx_Peripheral(I2C4_S_BITBANG);
 }
 
