@@ -90,11 +90,11 @@ typedef struct I2C_M_Software_t
 	uint8_t (*Endp)(struct I2C_M_Software_t *I2C_Driver);
 	uint8_t (*Result)(struct I2C_M_Software_t *I2C_Driver);
 	uint8_t (*Open)(struct I2C_M_Software_t *I2C_Driver);
-	uint8_t (*Detect)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr);
-	uint8_t (*Set)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size);
-	uint8_t (*Get)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr,uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size);
-	uint8_t (*Write)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
-	uint8_t (*Read)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
+	void (*Detect)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr);
+	void (*Set)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size);
+	void (*Get)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr,uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size);
+	void (*Write)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
+	void (*Read)(struct I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
 }I2C_M_Software_t;
 
 
@@ -108,6 +108,7 @@ typedef struct I2C_M_Hardware_t
 	uint16_t 		PIN_SDA;	//引脚
 	uint16_t 		Delay_time;	//延迟时间	
 	uint16_t 		Delay_cnt;	//延迟计数
+	uint16_t 		Index;
 	uint8_t 		Lock;
 	uint8_t 		Ret;
 	//方法
@@ -116,11 +117,11 @@ typedef struct I2C_M_Hardware_t
 	uint8_t (*Endp)(struct I2C_M_Hardware_t *I2C_Driver);
 	uint8_t (*Result)(struct I2C_M_Hardware_t *I2C_Driver);
 	uint8_t (*Open)(struct I2C_M_Hardware_t *I2C_Driver);
-	uint8_t (*Detect)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr);
-	uint8_t (*Set)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size);
-	uint8_t (*Get)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr,uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size);
-	uint8_t (*Write)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
-	uint8_t (*Read)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
+	void (*Detect)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr);
+	void (*Set)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size);
+	void (*Get)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr,uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size);
+	void (*Write)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
+	void (*Read)(struct I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
 }I2C_M_Hardware_t;
 
 

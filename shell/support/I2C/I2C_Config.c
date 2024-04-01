@@ -76,4 +76,105 @@ I2C_S_Bitbang_t I2C4_Slave = {
 
 
 
+void I2Cx_Init(uint8_t Bus)
+{
+	switch(Bus){
+		case I2C1_BUS: I2C1_Master.Init(&I2C1_Master);break;
+		case I2C2_BUS: I2C2_Master.Init(&I2C2_Master);break;
+		case I2C3_BUS: I2C3_Master.Init(&I2C3_Master);break;
+		default:break;
+	}
+}
+
+
+void I2Cx_Close(uint8_t Bus)
+{
+	switch(Bus){
+		case I2C1_BUS: I2C1_Master.Close(&I2C1_Master);break;
+		case I2C2_BUS: I2C2_Master.Close(&I2C2_Master);break;
+		case I2C3_BUS: I2C3_Master.Close(&I2C3_Master);break;
+		default:break;
+	}
+}
+
+uint8_t I2Cx_Open(uint8_t Bus)
+{
+	switch(Bus){
+		case I2C1_BUS: return I2C1_Master.Open(&I2C1_Master);
+		case I2C2_BUS: return I2C2_Master.Open(&I2C2_Master);
+		case I2C3_BUS: return I2C3_Master.Open(&I2C3_Master);
+		default:return CORE_ERROR;
+	}
+}
+
+uint8_t I2Cx_Endp(uint8_t Bus)
+{
+	switch(Bus){
+		case I2C1_BUS: return I2C1_Master.Endp(&I2C1_Master);
+		case I2C2_BUS: return I2C2_Master.Endp(&I2C2_Master);
+		case I2C3_BUS: return I2C3_Master.Endp(&I2C3_Master);
+		default:return CORE_ERROR;
+	}
+}
+
+uint8_t I2Cx_Result(uint8_t Bus)
+{
+	switch(Bus){
+		case I2C1_BUS: return I2C1_Master.Result(&I2C1_Master);
+		case I2C2_BUS: return I2C2_Master.Result(&I2C2_Master);
+		case I2C3_BUS: return I2C3_Master.Result(&I2C3_Master);
+		default:return CORE_ERROR;
+	}
+}
+
+void I2Cx_Set(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+{
+	switch(Bus){
+		case I2C1_BUS: I2C1_Master.Set(&I2C1_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
+		case I2C2_BUS: I2C2_Master.Set(&I2C2_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
+		case I2C3_BUS: I2C3_Master.Set(&I2C3_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
+		default:break;
+	}
+}
+
+void I2Cx_Get(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+{
+	switch(Bus){
+		case I2C1_BUS: I2C1_Master.Get(&I2C1_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
+		case I2C2_BUS: I2C2_Master.Get(&I2C2_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
+		case I2C3_BUS: I2C3_Master.Get(&I2C3_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
+		default:break;
+	}
+}
+
+void I2Cx_Write(uint8_t Bus, uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
+{
+	switch(Bus){
+		case I2C1_BUS: I2C1_Master.Write(&I2C1_Master,Dev_Addr,value,Size);break;
+		case I2C2_BUS: I2C2_Master.Write(&I2C2_Master,Dev_Addr,value,Size);break;
+		case I2C3_BUS: I2C3_Master.Write(&I2C3_Master,Dev_Addr,value,Size);break;
+		default:break;
+	}
+}
+
+
+void I2Cx_Read(uint8_t Bus, uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
+{
+	switch(Bus){
+		case I2C1_BUS: I2C1_Master.Read(&I2C1_Master,Dev_Addr,value,Size);break;
+		case I2C2_BUS: I2C2_Master.Read(&I2C2_Master,Dev_Addr,value,Size);break;
+		case I2C3_BUS: I2C3_Master.Read(&I2C3_Master,Dev_Addr,value,Size);break;
+		default:break;
+	}
+}
+
+void I2Cx_Detect(uint8_t Bus, uint8_t Dev_Addr)
+{
+	switch(Bus){
+		case I2C1_BUS: I2C1_Master.Detect(&I2C1_Master,Dev_Addr);break;
+		case I2C2_BUS: I2C2_Master.Detect(&I2C2_Master,Dev_Addr);break;
+		case I2C3_BUS: I2C3_Master.Detect(&I2C3_Master,Dev_Addr);break;
+		default:break;
+	}
+}
 

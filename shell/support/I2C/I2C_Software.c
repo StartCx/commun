@@ -142,56 +142,65 @@ uint8_t I2C_M_Software_Result(I2C_M_Software_t *I2C_Driver)
 }
 
 
-uint8_t I2C_M_Software_Set(I2C_M_Software_t *I2C_Driver,uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+void I2C_M_Software_Set(I2C_M_Software_t *I2C_Driver,uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size)
 {
 	Software_I2C_Start(I2C_Driver);
 	Software_I2C_Write(I2C_Driver, Dev_Addr | 0);
 	if( Software_I2C_WaitAck(I2C_Driver) != 0){
-		Software_I2C_Stop(I2C_Driver);return DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		I2C_Driver->Ret = DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		goto ERROR;
 	}
 	if( 16 == Reg_Size){
 		Software_I2C_Write(I2C_Driver, (uint8_t)(Reg_Addr>>8));             //数据地址(16位)
 		if( Software_I2C_WaitAck(I2C_Driver) != 0){
-			Software_I2C_Stop(I2C_Driver);return REG_ADDR_NO_ACK;	/* 寄存器无应答 */
+			I2C_Driver->Ret = REG_ADDR_NO_ACK;	/* 寄存器无应答 */
+			goto ERROR;
 		}
 	}
 	Software_I2C_Write(I2C_Driver, (uint8_t)(Reg_Addr&0x00FF));
 	if( Software_I2C_WaitAck(I2C_Driver) != 0){
-		Software_I2C_Stop(I2C_Driver);return REG_ADDR_NO_ACK;	/* 寄存器无应答 */
+		I2C_Driver->Ret = REG_ADDR_NO_ACK;	/* 寄存器无应答 */
+		goto ERROR;
 	}
 	for( I2C_Driver->Index = 0; I2C_Driver->Index < Size; I2C_Driver->Index++ ){
 		Software_I2C_Write(I2C_Driver, value[I2C_Driver->Index]);
 		if( Software_I2C_WaitAck(I2C_Driver) != 0){
-			Software_I2C_Stop(I2C_Driver);return WR_VALUE_NO_ACK;	/* 寄存器无应答 */
+			I2C_Driver->Ret = WR_VALUE_NO_ACK;	/* 寄存器无应答 */
+			goto ERROR;
 		}
 	}
+	I2C_Driver->Ret = NO_ERROR;
+ERROR:
 	Software_I2C_Stop(I2C_Driver);
-	return NO_ERROR;
 }
 
 
 
-uint8_t I2C_M_Software_Get(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size) 
+void I2C_M_Software_Get(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size) 
 {
 	Software_I2C_Start(I2C_Driver);
 	Software_I2C_Write(I2C_Driver, Dev_Addr | 0);
 	if( Software_I2C_WaitAck(I2C_Driver) != 0){
-		Software_I2C_Stop(I2C_Driver);return DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		I2C_Driver->Ret = DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		goto ERROR;
 	}
 	if( 16 == Reg_Size){
 		Software_I2C_Write(I2C_Driver, (uint8_t)(Reg_Addr>>8));             //数据地址(16位)
 		if( Software_I2C_WaitAck(I2C_Driver) != 0){
-			Software_I2C_Stop(I2C_Driver);return REG_ADDR_NO_ACK;	/* 寄存器无应答 */
+			I2C_Driver->Ret = REG_ADDR_NO_ACK;	/* 寄存器无应答 */
+			goto ERROR;
 		}
 	}
 	Software_I2C_Write(I2C_Driver, (uint8_t)(Reg_Addr&0x00FF));
 	if( Software_I2C_WaitAck(I2C_Driver) != 0){
-		Software_I2C_Stop(I2C_Driver);return REG_ADDR_NO_ACK;	/* 寄存器无应答 */
+		I2C_Driver->Ret = REG_ADDR_NO_ACK;	/* 寄存器无应答 */
+		goto ERROR;
 	}
 	Software_I2C_Start(I2C_Driver);
 	Software_I2C_Write(I2C_Driver, Dev_Addr | 1);
 	if( Software_I2C_WaitAck(I2C_Driver) != 0){
-		Software_I2C_Stop(I2C_Driver);return DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		I2C_Driver->Ret = DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		goto ERROR;
 	}
 	for( I2C_Driver->Index = 0; I2C_Driver->Index < Size; I2C_Driver->Index++ ){
 		value[I2C_Driver->Index] = Software_I2C_Read(I2C_Driver);
@@ -201,38 +210,43 @@ uint8_t I2C_M_Software_Get(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint1
 			Software_I2C_NAck(I2C_Driver);
 		}
 	}
+	I2C_Driver->Ret = NO_ERROR;
+ERROR:
 	Software_I2C_Stop(I2C_Driver);
-	return NO_ERROR;
 }
 
 
 
 
-uint8_t I2C_M_Software_Write(I2C_M_Software_t *I2C_Driver,uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
+void I2C_M_Software_Write(I2C_M_Software_t *I2C_Driver,uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
 {
 	Software_I2C_Start(I2C_Driver);
 	Software_I2C_Write(I2C_Driver, Dev_Addr | 0);
 	if( Software_I2C_WaitAck(I2C_Driver) != 0){
-		Software_I2C_Stop(I2C_Driver);return DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		I2C_Driver->Ret = DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		goto ERROR;
 	}
 	for( I2C_Driver->Index = 0; I2C_Driver->Index < Size; I2C_Driver->Index++ ){
 		Software_I2C_Write(I2C_Driver, value[I2C_Driver->Index]);
 		if( Software_I2C_WaitAck(I2C_Driver) != 0){
-			Software_I2C_Stop(I2C_Driver);return WR_VALUE_NO_ACK;	/* 寄存器无应答 */
+			I2C_Driver->Ret = WR_VALUE_NO_ACK;	/* 寄存器无应答 */
+			goto ERROR;
 		}
 	}
+	I2C_Driver->Ret = NO_ERROR;
+ERROR:
 	Software_I2C_Stop(I2C_Driver);
-	return NO_ERROR;
 }
 
 
 
-uint8_t I2C_M_Software_Read(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size) 
+void I2C_M_Software_Read(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size) 
 {	
 	Software_I2C_Start(I2C_Driver);
 	Software_I2C_Write(I2C_Driver, Dev_Addr | 1);
 	if( Software_I2C_WaitAck(I2C_Driver) != 0){
-		Software_I2C_Stop(I2C_Driver);return DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		I2C_Driver->Ret = DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		goto ERROR;
 	}
 	for( I2C_Driver->Index = 0; I2C_Driver->Index < Size; I2C_Driver->Index++ ){
 		value[I2C_Driver->Index] = Software_I2C_Read(I2C_Driver);
@@ -242,19 +256,21 @@ uint8_t I2C_M_Software_Read(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint
 			Software_I2C_NAck(I2C_Driver);
 		}
 	}
+	I2C_Driver->Ret = NO_ERROR;
+ERROR:
 	Software_I2C_Stop(I2C_Driver);
-	return NO_ERROR;
 }
 
 
-uint8_t I2C_M_Software_Detect(I2C_M_Software_t *I2C_Driver, uint8_t _Address)
+void I2C_M_Software_Detect(I2C_M_Software_t *I2C_Driver, uint8_t _Address)
 {
 	Software_I2C_Start(I2C_Driver);
 	Software_I2C_Write(I2C_Driver, _Address | 0);
 	if( Software_I2C_WaitAck(I2C_Driver) != 0){
-		Software_I2C_Stop(I2C_Driver);
-		return DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		I2C_Driver->Ret = DEV_ADDR_NO_ACK;	/* 器件无应答 */
+		goto ERROR;
 	}
+	I2C_Driver->Ret = NO_ERROR;
+ERROR:
 	Software_I2C_Stop(I2C_Driver);
-	return NO_ERROR;
 }

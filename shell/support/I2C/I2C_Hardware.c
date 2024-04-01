@@ -53,21 +53,21 @@ uint8_t I2C_M_Hardware_Result(I2C_M_Hardware_t *I2C_Driver)
 }
 
 
-uint8_t I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+void I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size)
 {
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		} 
 	} 
 	I2C_GenerateSTART(I2C_Driver->I2Cx, ENABLE);
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_MODE_SELECT))  {
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		} 
 	} 
 	
@@ -75,8 +75,8 @@ uint8_t I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))  {
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return DEV_ADDR_NO_ACK;
+			I2C_Driver->Ret = DEV_ADDR_NO_ACK;
+			goto ERROR;
 		}
 	}
 	
@@ -85,8 +85,8 @@ uint8_t I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16
 		I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 		while(! I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)){
 			if((I2C_Driver->Delay_cnt--) == 0){
-				I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-				return REG_ADDR_NO_ACK;
+				I2C_Driver->Ret = REG_ADDR_NO_ACK;
+				goto ERROR;
 			}
 		} 
 	}
@@ -95,8 +95,8 @@ uint8_t I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(! I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return REG_ADDR_NO_ACK;
+			I2C_Driver->Ret = REG_ADDR_NO_ACK;
+			goto ERROR;
 		}
 	} 
 
@@ -107,24 +107,25 @@ uint8_t I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16
 		I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 		while (!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)){
 			if((I2C_Driver->Delay_cnt--) == 0){
-				I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-				return WR_VALUE_NO_ACK;
+				I2C_Driver->Ret = WR_VALUE_NO_ACK;
+				goto ERROR;
 			}
 		} 
 	}
+	I2C_Driver->Ret = NO_ERROR;
+ERROR:
 	I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-	return NO_ERROR;
 }
 
 
 
-uint8_t I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size) 
+void I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size) 
 {
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		}
 	}
 
@@ -132,8 +133,8 @@ uint8_t I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint1
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_MODE_SELECT)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		}
 	}
 
@@ -141,19 +142,18 @@ uint8_t I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint1
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return DEV_ADDR_NO_ACK;
+			I2C_Driver->Ret = DEV_ADDR_NO_ACK;
+			goto ERROR;
 		}
 	}
 
-	I2C_Cmd(I2C_Driver->I2Cx, ENABLE);
-	if( 16 == Reg_Size){
+	if( Reg_Size == 16){
 		I2C_SendData(I2C_Driver->I2Cx, (uint8_t)(Reg_Addr>>8));  
 		I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 		while(! I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)){
 			if((I2C_Driver->Delay_cnt--) == 0){
-				I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-				return REG_ADDR_NO_ACK;
+				I2C_Driver->Ret = REG_ADDR_NO_ACK;
+				goto ERROR;
 			}
 		} 
 	}
@@ -161,8 +161,8 @@ uint8_t I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint1
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(! I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return REG_ADDR_NO_ACK;
+			I2C_Driver->Ret = REG_ADDR_NO_ACK;
+			goto ERROR;
 		}
 	} 
 
@@ -170,8 +170,8 @@ uint8_t I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint1
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_MODE_SELECT)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		}
 	}
 
@@ -179,11 +179,11 @@ uint8_t I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint1
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return DEV_ADDR_NO_ACK;
+			I2C_Driver->Ret = DEV_ADDR_NO_ACK;
+			goto ERROR;
 		}
 	}
-
+	
 	while(Size)  
 	{
 		if( Size == 1){
@@ -193,8 +193,8 @@ uint8_t I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint1
 		I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 		while(I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_RECEIVED)==0){
 			if((I2C_Driver->Delay_cnt--) == 0){
-				I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-				return WR_VALUE_NO_ACK;
+				I2C_Driver->Ret = WR_VALUE_NO_ACK;
+				goto ERROR;
 			} 
 		} 
 		*value = I2C_ReceiveData(I2C_Driver->I2Cx);
@@ -202,39 +202,34 @@ uint8_t I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint1
 		Size--;           
 	}
 	I2C_AcknowledgeConfig(I2C_Driver->I2Cx, ENABLE);
-	return NO_ERROR;
+	I2C_Driver->Ret = NO_ERROR;
+	return;
+ERROR:
+	I2C_AcknowledgeConfig(I2C_Driver->I2Cx, ENABLE);
+	I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
 }
 
 
 
 
-uint8_t I2C_M_Hardware_Write(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
+void I2C_M_Hardware_Write(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
 {
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY))   {
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		}
 	} 
 	I2C_GenerateSTART(I2C_Driver->I2Cx, ENABLE);
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_MODE_SELECT))  {
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		}
 	} 
-	
-	I2C_Send7bitAddress(I2C_Driver->I2Cx, Dev_Addr, I2C_Direction_Transmitter);
-	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
-	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))  {
-		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return DEV_ADDR_NO_ACK;
-		}
-	}
-	
+
 	while(Size--)  
 	{
 		I2C_SendData(I2C_Driver->I2Cx, *value); 
@@ -242,24 +237,25 @@ uint8_t I2C_M_Hardware_Write(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint
 		I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 		while (!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)){
 			if((I2C_Driver->Delay_cnt--) == 0){
-				I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-				return WR_VALUE_NO_ACK;
+				I2C_Driver->Ret = WR_VALUE_NO_ACK;
+				goto ERROR;
 			} 
 		} 
 	}
+	I2C_Driver->Ret = NO_ERROR;
+ERROR:
 	I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-	return NO_ERROR;
 }
 
 
 
-uint8_t I2C_M_Hardware_Read(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size) 
+void I2C_M_Hardware_Read(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size) 
 {	
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		}
 	}
 
@@ -267,38 +263,11 @@ uint8_t I2C_M_Hardware_Read(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_MODE_SELECT)){
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		}
 	}
 
-	I2C_Send7bitAddress(I2C_Driver->I2Cx, Dev_Addr, I2C_Direction_Transmitter);
-	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
-	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)){
-		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return WR_VALUE_NO_ACK;
-		} 
-	}
-
-	I2C_Cmd(I2C_Driver->I2Cx, ENABLE);
-	I2C_GenerateSTART(I2C_Driver->I2Cx, ENABLE);
-	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
-	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_MODE_SELECT)){
-		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
-		}
-	}
-
-	I2C_Send7bitAddress(I2C_Driver->I2Cx, Dev_Addr, I2C_Direction_Receiver);
-	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
-	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)){
-		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return DEV_ADDR_NO_ACK;
-		}
-	}
 	while(Size)  
 	{
 		if( Size == 1){
@@ -308,8 +277,8 @@ uint8_t I2C_M_Hardware_Read(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint
 		I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 		while(I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_RECEIVED)==0){
 			if((I2C_Driver->Delay_cnt--) == 0){
-				I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-				return WR_VALUE_NO_ACK;
+				I2C_Driver->Ret = WR_VALUE_NO_ACK;
+				goto ERROR;
 			} 
 		} 
 		*value = I2C_ReceiveData(I2C_Driver->I2Cx);
@@ -317,25 +286,29 @@ uint8_t I2C_M_Hardware_Read(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint
 		Size--;           
 	}
 	I2C_AcknowledgeConfig(I2C_Driver->I2Cx, ENABLE);
-	return NO_ERROR;
+	I2C_Driver->Ret = NO_ERROR;
+	return;
+ERROR:
+	I2C_AcknowledgeConfig(I2C_Driver->I2Cx, ENABLE);
+	I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
 }
 
 
-uint8_t I2C_M_Hardware_Detect(I2C_M_Hardware_t *I2C_Driver, uint8_t _Address)
+void I2C_M_Hardware_Detect(I2C_M_Hardware_t *I2C_Driver, uint8_t _Address)
 {
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY))   {
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		} 
 	} 
 	I2C_GenerateSTART(I2C_Driver->I2Cx, ENABLE);
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_MODE_SELECT))  {
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return BUS_ERROR;
+			I2C_Driver->Ret = BUS_ERROR;
+			goto ERROR;
 		} 
 	} 
 	
@@ -343,11 +316,11 @@ uint8_t I2C_M_Hardware_Detect(I2C_M_Hardware_t *I2C_Driver, uint8_t _Address)
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))  {
 		if((I2C_Driver->Delay_cnt--) == 0){
-			I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-			return DEV_ADDR_NO_ACK;
+			I2C_Driver->Ret = DEV_ADDR_NO_ACK;
+			goto ERROR;
 		} 
 	}
-
+	I2C_Driver->Ret = NO_ERROR;
+ERROR:
 	I2C_GenerateSTOP(I2C_Driver->I2Cx, ENABLE);
-	return NO_ERROR;
 }

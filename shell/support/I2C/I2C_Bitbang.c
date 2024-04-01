@@ -31,7 +31,7 @@ void I2C_M_Bitbang_Config(I2C_M_Bitbang_t *I2C_Driver)
 
 uint8_t I2C_M_Bitbang_Open(I2C_M_Bitbang_t *I2C_Driver)
 {
-	if( I2C_Driver->Register.R12_Lock == CORE_UNLOCK){
+	if( I2C_Driver->Register.R12_Lock == CORE_UNLOCK && I2C_Driver->Mode == I2C_TASK_READY && I2C_Driver->Register.R15_PC == 0){
 		I2C_Driver->Register.R12_Lock = CORE_LOCK;
 		return CORE_SUCCESS;
 	}
