@@ -9,7 +9,6 @@
 #include "adc.h"
 #include "dht11.h"
 #include "core.h"
-#include "w25qx.h"
 #include "encoder_input.h"
 #include "IR_Receiver.h"
 #include "key_input.h"

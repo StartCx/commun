@@ -149,7 +149,7 @@ uint8_t I2C_M_Software_Result(I2C_M_Software_t *I2C_Driver)
 }
 
 
-void I2C_M_Software_Set(I2C_M_Software_t *I2C_Driver,uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+void I2C_M_Software_Set(I2C_M_Software_t *I2C_Driver,uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *pData, uint16_t Size)
 {
 	if( GPIO_GET_STATE(I2C_Driver->PORT_SCL, I2C_Driver->PIN_SCL) == 0 || GPIO_GET_STATE(I2C_Driver->PORT_SDA, I2C_Driver->PIN_SDA) == 0){
 		I2C_Driver->Ret = BUS_ERROR;	/* 器件无应答 */
@@ -174,7 +174,7 @@ void I2C_M_Software_Set(I2C_M_Software_t *I2C_Driver,uint8_t Dev_Addr, uint16_t 
 		goto ERROR;
 	}
 	for( I2C_Driver->Index = 0; I2C_Driver->Index < Size; I2C_Driver->Index++ ){
-		Software_I2C_Write(I2C_Driver, value[I2C_Driver->Index]);
+		Software_I2C_Write(I2C_Driver, pData[I2C_Driver->Index]);
 		if( Software_I2C_WaitAck(I2C_Driver) != 0){
 			I2C_Driver->Ret = WR_VALUE_NO_ACK;	/* 寄存器无应答 */
 			goto ERROR;
@@ -187,7 +187,7 @@ ERROR:
 
 
 
-void I2C_M_Software_Get(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size) 
+void I2C_M_Software_Get(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *pData, uint16_t Size) 
 {
 	if( GPIO_GET_STATE(I2C_Driver->PORT_SCL, I2C_Driver->PIN_SCL) == 0 || GPIO_GET_STATE(I2C_Driver->PORT_SDA, I2C_Driver->PIN_SDA) == 0){
 		I2C_Driver->Ret = BUS_ERROR;	/* 器件无应答 */
@@ -218,7 +218,7 @@ void I2C_M_Software_Get(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint16_t
 		goto ERROR;
 	}
 	for( I2C_Driver->Index = 0; I2C_Driver->Index < Size; I2C_Driver->Index++ ){
-		value[I2C_Driver->Index] = Software_I2C_Read(I2C_Driver);
+		pData[I2C_Driver->Index] = Software_I2C_Read(I2C_Driver);
 		if (I2C_Driver->Index != Size - 1){
 			Software_I2C_Ack(I2C_Driver);
 		}else{
@@ -259,7 +259,7 @@ ERROR:
 
 
 
-void I2C_M_Software_Read(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size) 
+void I2C_M_Software_Read(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *pData, uint16_t Size) 
 {	
 	if( GPIO_GET_STATE(I2C_Driver->PORT_SCL, I2C_Driver->PIN_SCL) == 0 || GPIO_GET_STATE(I2C_Driver->PORT_SDA, I2C_Driver->PIN_SDA) == 0){
 		I2C_Driver->Ret = BUS_ERROR;	/* 器件无应答 */
@@ -272,7 +272,7 @@ void I2C_M_Software_Read(I2C_M_Software_t *I2C_Driver, uint8_t Dev_Addr, uint8_t
 		goto ERROR;
 	}
 	for( I2C_Driver->Index = 0; I2C_Driver->Index < Size; I2C_Driver->Index++ ){
-		value[I2C_Driver->Index] = Software_I2C_Read(I2C_Driver);
+		pData[I2C_Driver->Index] = Software_I2C_Read(I2C_Driver);
 		if (I2C_Driver->Index != Size - 1){
 			Software_I2C_Ack(I2C_Driver);
 		}else{

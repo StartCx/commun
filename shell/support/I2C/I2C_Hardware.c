@@ -96,7 +96,7 @@ uint8_t I2C_M_Hardware_Result(I2C_M_Hardware_t *I2C_Driver)
 }
 
 
-void I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+void I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *pData, uint16_t Size)
 {
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY)){
@@ -145,8 +145,8 @@ void I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16_t 
 
 	while(Size--)  
 	{
-		I2C_SendData(I2C_Driver->I2Cx, *value); 
-		value++; 
+		I2C_SendData(I2C_Driver->I2Cx, *pData); 
+		pData++; 
 		I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 		while (!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)){
 			if((I2C_Driver->Delay_cnt--) == 0){
@@ -162,7 +162,7 @@ ERROR:
 
 
 
-void I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size) 
+void I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *pData, uint16_t Size) 
 {
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY)){
@@ -240,8 +240,8 @@ void I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint16_t
 				goto ERROR;
 			} 
 		} 
-		*value = I2C_ReceiveData(I2C_Driver->I2Cx);
-		value++; 
+		*pData = I2C_ReceiveData(I2C_Driver->I2Cx);
+		pData++; 
 		Size--;           
 	}
 	I2C_AcknowledgeConfig(I2C_Driver->I2Cx, ENABLE);
@@ -255,7 +255,7 @@ ERROR:
 
 
 
-void I2C_M_Hardware_Write(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
+void I2C_M_Hardware_Write(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint8_t *pData, uint16_t Size)
 {
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY))   {
@@ -282,8 +282,8 @@ void I2C_M_Hardware_Write(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint8_t
 	}
 	while(Size--)  
 	{
-		I2C_SendData(I2C_Driver->I2Cx, *value); 
-		value++; 
+		I2C_SendData(I2C_Driver->I2Cx, *pData); 
+		pData++; 
 		I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 		while (!I2C_CheckEvent(I2C_Driver->I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)){
 			if((I2C_Driver->Delay_cnt--) == 0){
@@ -299,7 +299,7 @@ ERROR:
 
 
 
-void I2C_M_Hardware_Read(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size) 
+void I2C_M_Hardware_Read(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *pData, uint16_t Size) 
 {	
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
 	while(I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY)){
@@ -338,8 +338,8 @@ void I2C_M_Hardware_Read(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t
 				goto ERROR;
 			} 
 		} 
-		*value = I2C_ReceiveData(I2C_Driver->I2Cx);
-		value++; 
+		*pData = I2C_ReceiveData(I2C_Driver->I2Cx);
+		pData++; 
 		Size--;           
 	}
 	I2C_AcknowledgeConfig(I2C_Driver->I2Cx, ENABLE);

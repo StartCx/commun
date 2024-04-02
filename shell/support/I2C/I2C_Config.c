@@ -135,43 +135,43 @@ uint8_t I2Cx_Result(uint8_t Bus)
 	}
 }
 
-void I2Cx_Set(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+void I2Cx_Set(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *pData, uint16_t Size)
 {
 	switch(Bus){
-		case I2C1_M_HARDWARE: I2C1_Master.Set(&I2C1_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
-		case I2C2_M_BITBANG: I2C2_Master.Set(&I2C2_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
-		case I2C3_M_SOFTWARE: I2C3_Master.Set(&I2C3_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
+		case I2C1_M_HARDWARE: I2C1_Master.Set(&I2C1_Master,Dev_Addr,Reg_Addr,Reg_Size,pData,Size);break;
+		case I2C2_M_BITBANG: I2C2_Master.Set(&I2C2_Master,Dev_Addr,Reg_Addr,Reg_Size,pData,Size);break;
+		case I2C3_M_SOFTWARE: I2C3_Master.Set(&I2C3_Master,Dev_Addr,Reg_Addr,Reg_Size,pData,Size);break;
 		default:break;
 	}
 }
 
-void I2Cx_Get(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+void I2Cx_Get(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *pData, uint16_t Size)
 {
 	switch(Bus){
-		case I2C1_M_HARDWARE: I2C1_Master.Get(&I2C1_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
-		case I2C2_M_BITBANG:  I2C2_Master.Get(&I2C2_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
-		case I2C3_M_SOFTWARE: I2C3_Master.Get(&I2C3_Master,Dev_Addr,Reg_Addr,Reg_Size,value,Size);break;
+		case I2C1_M_HARDWARE: I2C1_Master.Get(&I2C1_Master,Dev_Addr,Reg_Addr,Reg_Size,pData,Size);break;
+		case I2C2_M_BITBANG:  I2C2_Master.Get(&I2C2_Master,Dev_Addr,Reg_Addr,Reg_Size,pData,Size);break;
+		case I2C3_M_SOFTWARE: I2C3_Master.Get(&I2C3_Master,Dev_Addr,Reg_Addr,Reg_Size,pData,Size);break;
 		default:break;
 	}
 }
 
-void I2Cx_Write(uint8_t Bus, uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
+void I2Cx_Write(uint8_t Bus, uint8_t Dev_Addr, uint8_t *pData, uint16_t Size)
 {
 	switch(Bus){
-		case I2C1_M_HARDWARE: I2C1_Master.Write(&I2C1_Master,Dev_Addr,value,Size);break;
-		case I2C2_M_BITBANG:  I2C2_Master.Write(&I2C2_Master,Dev_Addr,value,Size);break;
-		case I2C3_M_SOFTWARE: I2C3_Master.Write(&I2C3_Master,Dev_Addr,value,Size);break;
+		case I2C1_M_HARDWARE: I2C1_Master.Write(&I2C1_Master,Dev_Addr,pData,Size);break;
+		case I2C2_M_BITBANG:  I2C2_Master.Write(&I2C2_Master,Dev_Addr,pData,Size);break;
+		case I2C3_M_SOFTWARE: I2C3_Master.Write(&I2C3_Master,Dev_Addr,pData,Size);break;
 		default:break;
 	}
 }
 
 
-void I2Cx_Read(uint8_t Bus, uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
+void I2Cx_Read(uint8_t Bus, uint8_t Dev_Addr, uint8_t *pData, uint16_t Size)
 {
 	switch(Bus){
-		case I2C1_M_HARDWARE: I2C1_Master.Read(&I2C1_Master,Dev_Addr,value,Size);break;
-		case I2C2_M_BITBANG:  I2C2_Master.Read(&I2C2_Master,Dev_Addr,value,Size);break;
-		case I2C3_M_SOFTWARE: I2C3_Master.Read(&I2C3_Master,Dev_Addr,value,Size);break;
+		case I2C1_M_HARDWARE: I2C1_Master.Read(&I2C1_Master,Dev_Addr,pData,Size);break;
+		case I2C2_M_BITBANG:  I2C2_Master.Read(&I2C2_Master,Dev_Addr,pData,Size);break;
+		case I2C3_M_SOFTWARE: I2C3_Master.Read(&I2C3_Master,Dev_Addr,pData,Size);break;
 		default:break;
 	}
 }

@@ -7,10 +7,9 @@
 #include "gpio_output.h"
 #include "static_lib.h"
 #include "I2C_Config.h"
-#include "simulated_spi.h"
+#include "SPI_Bitbang.h"
 #include "ymodem.h"
 #include "dht11.h"
-#include "w25qx.h"
 #include "queue.h"
 #include "encoder_input.h"
 #include "IR_Receiver.h"
@@ -30,7 +29,6 @@ typedef struct
 	uint8_t Reg_Value[512];
 	uint16_t Value_Length;
 	I2C_M_Bitbang_t *I2C_Driver;
-	SPI_Driver_t *SPI_Driver;
 	GPIO_Output_Device_t *GPIO_Output;
 	KeyDriver_t *KEY;
 	Servo_Output_t *Servo;

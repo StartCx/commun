@@ -110,6 +110,6 @@ extern void Timer_IncTick(void);
 extern uint8_t Scheduler(struct Timer_t *p);
 extern void Restart_Scheduler_Timer(struct Timer_t *p);
 extern void GPIO_ToggleBit(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
-extern void Square_Wave_Init(void);
-extern void Square_Wave_Func(void);
+
+
 #endif

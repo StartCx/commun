@@ -31,10 +31,10 @@ void I2Cx_Close(uint8_t Bus);
 uint8_t I2Cx_Open(uint8_t Bus);
 uint8_t I2Cx_Endp(uint8_t Bus);
 uint8_t I2Cx_Result(uint8_t Bus);
-void I2Cx_Set(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size);
-void I2Cx_Get(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size);
-void I2Cx_Write(uint8_t Bus, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
-void I2Cx_Read(uint8_t Bus, uint8_t Dev_Addr, uint8_t *value, uint16_t Size);
+void I2Cx_Set(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *pData, uint16_t Size);
+void I2Cx_Get(uint8_t Bus, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *pData, uint16_t Size);
+void I2Cx_Write(uint8_t Bus, uint8_t Dev_Addr, uint8_t *pData, uint16_t Size);
+void I2Cx_Read(uint8_t Bus, uint8_t Dev_Addr, uint8_t *pData, uint16_t Size);
 void I2Cx_Detect(uint8_t Bus, uint8_t Dev_Addr);
 
 /***********************************************************************************************/

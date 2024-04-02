@@ -64,17 +64,3 @@ void GPIO_ToggleBit(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
   }
 }
 
-void Square_Wave_Init(void)
-{
-	GPIO_InitTypeDef GPIO_InitStructure; 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);
-}
-
-
-void Square_Wave_Func(void)
-{
-	GPIO_ToggleBit( GPIOC, GPIO_Pin_14);
-}

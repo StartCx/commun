@@ -45,40 +45,40 @@ void I2C_M_Bitbang_Close(I2C_M_Bitbang_t *I2C_Driver)
 
 
 
-void I2C_M_Bitbang_Set(I2C_M_Bitbang_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+void I2C_M_Bitbang_Set(I2C_M_Bitbang_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *pData, uint16_t Size)
 {
 	I2C_Driver->Dev_Addr = Dev_Addr;
 	I2C_Driver->Reg_Addr = Reg_Addr;
 	I2C_Driver->Reg_Byte = Reg_Size;
-	I2C_Driver->pData 	= value;
+	I2C_Driver->pData 	= pData;
 	I2C_Driver->Size 	= Size;
 	I2C_Driver->Mode 	= I2C_SEND_REG_DATA;
 }
 
 
-void I2C_M_Bitbang_Get(I2C_M_Bitbang_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *value, uint16_t Size)
+void I2C_M_Bitbang_Get(I2C_M_Bitbang_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *pData, uint16_t Size)
 {
 	I2C_Driver->Dev_Addr = Dev_Addr;
 	I2C_Driver->Reg_Addr = Reg_Addr;
 	I2C_Driver->Reg_Byte = Reg_Size;
-	I2C_Driver->pData 	= value;
+	I2C_Driver->pData 	= pData;
 	I2C_Driver->Size 	= Size;
 	I2C_Driver->Mode 	= I2C_RECV_REG_DATA;
 }
 
 
-void I2C_M_Bitbang_Write(I2C_M_Bitbang_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
+void I2C_M_Bitbang_Write(I2C_M_Bitbang_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *pData, uint16_t Size)
 {
 	I2C_Driver->Dev_Addr = Dev_Addr;
-	I2C_Driver->pData 	= value;
+	I2C_Driver->pData 	= pData;
 	I2C_Driver->Size 	= Size;
 	I2C_Driver->Mode 	= I2C_SEND_DATA;
 }
 
-void I2C_M_Bitbang_Read(I2C_M_Bitbang_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *value, uint16_t Size)
+void I2C_M_Bitbang_Read(I2C_M_Bitbang_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *pData, uint16_t Size)
 {
 	I2C_Driver->Dev_Addr= Dev_Addr;
-	I2C_Driver->pData 	= value;
+	I2C_Driver->pData 	= pData;
 	I2C_Driver->Size 	= Size;
 	I2C_Driver->Mode 	= I2C_RECV_DATA;
 }

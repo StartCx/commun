@@ -10,7 +10,7 @@
       <TargetName>Pro</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
+      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -185,6 +185,7 @@
             <uocXRam>0</uocXRam>
             <RvdsVP>0</RvdsVP>
             <RvdsMve>0</RvdsMve>
+            <RvdsCdeCp>0</RvdsCdeCp>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -338,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_MD,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\HARDWARE;..\Libraries\STM32F10x_StdPeriph_Driver;..\Libraries\STM32_USB-FS-Device_Driver;..\SYSTEM;..\User;..\bsp;..\support;..\Device;..\support\I2C</IncludePath>
+              <IncludePath>..\CORE;..\HARDWARE;..\Libraries\STM32F10x_StdPeriph_Driver;..\Libraries\STM32_USB-FS-Device_Driver;..\SYSTEM;..\User;..\bsp;..\support;..\Device;..\support\I2C;..\support\SPI</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -351,7 +352,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <uClangAs>0</uClangAs>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -563,11 +564,6 @@
               <FilePath>..\support\shell_task.c</FilePath>
             </File>
             <File>
-              <FileName>simulated_spi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\support\simulated_spi.c</FilePath>
-            </File>
-            <File>
               <FileName>simulated_pwm.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\support\simulated_pwm.c</FilePath>
@@ -643,11 +639,6 @@
               <FilePath>..\Device\dht11.c</FilePath>
             </File>
             <File>
-              <FileName>w25qx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Device\w25qx.c</FilePath>
-            </File>
-            <File>
               <FileName>hc_sr04.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\hc_sr04.c</FilePath>
@@ -682,6 +673,31 @@
               <FileType>1</FileType>
               <FilePath>..\support\I2C\I2C_Hardware.c</FilePath>
             </File>
+            <File>
+              <FileName>I2C_StructLib.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\support\I2C\I2C_StructLib.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>SPI</GroupName>
+          <Files>
+            <File>
+              <FileName>SPI_Config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\support\SPI\SPI_Config.c</FilePath>
+            </File>
+            <File>
+              <FileName>SPI_Bitbang.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\support\SPI\SPI_Bitbang.c</FilePath>
+            </File>
+            <File>
+              <FileName>SPI_Software.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\support\SPI\SPI_Software.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -693,5 +709,14 @@
     <components/>
     <files/>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>project</LayName>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>
