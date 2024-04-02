@@ -153,7 +153,22 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>((I2C_TypeDef *) (((uint32_t)0x40000000) + 0x5400))</ItemText>
+          <ItemText>Temp0</ItemText>
+        </Ww>
+        <Ww>
+          <count>1</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>Temp1</ItemText>
+        </Ww>
+        <Ww>
+          <count>2</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>Temp2</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>Temp</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>
@@ -294,7 +309,7 @@
 
   <Group>
     <GroupName>DRIVER</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -947,6 +962,30 @@
       <bDave2>0</bDave2>
       <PathWithFileName>..\support\SPI\SPI_Software.c</PathWithFileName>
       <FilenameWithoutPath>SPI_Software.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>8</GroupNumber>
+      <FileNumber>57</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\support\SPI\SPI_Hardware.c</PathWithFileName>
+      <FilenameWithoutPath>SPI_Hardware.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>8</GroupNumber>
+      <FileNumber>58</FileNumber>
+      <FileType>5</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\support\SPI\SPI_StructLib.h</PathWithFileName>
+      <FilenameWithoutPath>SPI_StructLib.h</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

@@ -44,8 +44,14 @@ typedef struct SPI_M_Bitbang_t
 
 typedef struct SPI_M_Software_t
 {	
-	uint8_t _CPOL;
-	uint8_t _CPHA;
+	uint8_t 		_CPOL;
+	uint8_t 		_CPHA;
+	uint8_t			Lock;
+	uint8_t 		Mask;
+	uint16_t 		Index;
+	uint16_t 		Delay_time;	//延迟时间
+	uint16_t 		Delay_cnt;	//延迟计数
+	uint16_t 		Rx_Data;	//接收一字节
 	
 	GPIO_TypeDef	*PORT_CS[2];//端口
 	uint16_t 		PIN_CS[2];	//引脚
@@ -57,7 +63,6 @@ typedef struct SPI_M_Software_t
 	uint16_t 		PIN_MOSI;	//引脚
 	
 	void (*Init)(struct SPI_M_Software_t *SPI_Driver);
-	void (*Driver)(struct SPI_M_Software_t *SPI_Driver);
 	void (*Close)(struct SPI_M_Software_t *SPI_Driver,uint8_t ID);
 	uint8_t (*Open)(struct SPI_M_Software_t *SPI_Driver, uint8_t ID);
 	uint8_t (*Endp)(struct SPI_M_Software_t *SPI_Driver);
@@ -65,6 +70,36 @@ typedef struct SPI_M_Software_t
 	void (*WriteThenRead)(struct SPI_M_Software_t *SPI_Driver,uint8_t *pTxData, uint16_t TxSize,uint8_t *pRxData, uint16_t RxSize);
 	
 }SPI_M_Software_t;
+
+
+typedef struct SPI_M_Hardware_t
+{	
+	SPI_TypeDef* 	SPIx;
+	uint16_t 		_CPOL;
+	uint16_t 		_CPHA;
+	uint8_t			Lock;
+	uint16_t 		Index;
+	uint16_t 		Delay_time;	//延迟时间
+	uint16_t 		Delay_cnt;	//延迟计数
+	uint16_t 		Rx_Data;	//接收一字节
+	
+	GPIO_TypeDef	*PORT_CS[2];//端口
+	uint16_t 		PIN_CS[2];	//引脚
+	GPIO_TypeDef	*PORT_SCK;	//端口
+	uint16_t 		PIN_SCK;	//引脚
+	GPIO_TypeDef	*PORT_MISO;	//端口
+	uint16_t 		PIN_MISO;	//引脚
+	GPIO_TypeDef	*PORT_MOSI;	//端口
+	uint16_t 		PIN_MOSI;	//引脚
+	
+	void (*Init)(struct SPI_M_Hardware_t *SPI_Driver);
+	void (*Close)(struct SPI_M_Hardware_t *SPI_Driver,uint8_t ID);
+	uint8_t (*Open)(struct SPI_M_Hardware_t *SPI_Driver, uint8_t ID);
+	uint8_t (*Endp)(struct SPI_M_Hardware_t *SPI_Driver);
+	void (*WriteAndRead)(struct SPI_M_Hardware_t *SPI_Driver,uint8_t *pTxData, uint8_t *pRxData, uint16_t Size);
+	void (*WriteThenRead)(struct SPI_M_Hardware_t *SPI_Driver,uint8_t *pTxData, uint16_t TxSize,uint8_t *pRxData, uint16_t RxSize);
+	
+}SPI_M_Hardware_t;
 
 
 #endif

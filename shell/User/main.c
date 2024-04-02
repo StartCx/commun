@@ -4,19 +4,30 @@
 #include "string.h"
 #include "shell_task.h"
 #include "I2C_Config.h"
-#include "simulated_pwm.h"
-#include "simulated_uart.h"
-#include "adc.h"
-#include "dht11.h"
+#include "SPI_Config.h"
 #include "core.h"
-#include "encoder_input.h"
-#include "IR_Receiver.h"
-#include "key_input.h"
-#include "servo_output.h"
-#include "hc_sr04.h"
-#include "DS18B20.h"
-#include "I2C_Config.h"
 
+uint32_t Temp = 0;
+uint8_t buf[5];
+
+u32 SPI_FLASH_ReadID(uint8_t Bus, uint8_t CSx)
+{
+	
+	uint8_t Write_Data = 0;
+	/* 开始通讯：CS低电平 */
+	SPIx_Open(Bus, CSx);
+
+	/* 发送JEDEC指令，读取ID */
+	Write_Data = 0x9F;
+	SPIx_WriteThenRead(Bus,&Write_Data,1,buf,3);
+	/* 停止通讯：CS高电平 */
+	while( SPIx_Endp(Bus) != CORE_DONE);
+	
+	/*把数据组合起来，作为函数的返回值*/
+	Temp = (buf[0] << 16) | (buf[1] << 8) | buf[2];
+	SPIx_Close(Bus, CSx);
+	return Temp;
+}
 
 
 
@@ -29,10 +40,10 @@ int main(void)
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1,ENABLE);	 //打开ADC时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);	 //打开时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);	 //打开时钟
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1,ENABLE);	 //打开时钟
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
-
 	
 	Usart1_Init(115200);//PA9,PA10
 	
@@ -40,37 +51,18 @@ int main(void)
 	I2Cx_Init(I2C2_M_BITBANG);
 	I2Cx_Init(I2C3_M_SOFTWARE);
 	I2Cx_Init(I2C4_S_BITBANG);
-/*	
-	for(int i =0; i < 255; i++){
-		if(I2C1_Master.Detect(&I2C1_Master,i) == NO_ERROR){
-			printf("0x%2x 地址存在\r\n",i);
-		}else{
-			printf("0x%2x 地址不存在\r\n",i);
-		}
-		for(int j = 0; j< 100000;j++);
-	}
-	uint8_t txbuf[8];
-	uint8_t rxbuf[8];
-	I2C1_Master.Get(&I2C1_Master, 0xa0, 0x00,8, rxbuf, 8);
-	for(int i = 0; i< 8;i++){
-		printf(" 0x%x",rxbuf[i]);
-	}
-	printf("读完成\r\n");
 	
-	for(int i = 0; i< 8;i++){
-		txbuf[i] = rxbuf[i]+1;
-	}
-	I2C1_Master.Set(&I2C1_Master, 0xa0, 0x00,8, txbuf, 8);
-	for(int i = 0; i< 8;i++){
-		printf(" 0x%x",txbuf[i]);
-	}
-	printf("写完成\r\n");
-*/	
+	SPIx_Init(SPI1_M_HARDWARE);
+	SPIx_Init(SPI2_M_BITBANG);
+	SPIx_Init(SPI3_M_SOFTWARE);
+	
 	TIM4_Configuration();
 	Shell_Device.Init(&Shell_Device);
 	Led_Device.Init(&Led_Device);
+	__IO uint32_t FlashID = 0;
 	//****************************************************************************/
-	
+	FlashID = SPI_FLASH_ReadID(SPI3_M_SOFTWARE, 0);	
+	printf("\r\n FlashID is 0x%X\r\n", FlashID);
 	while(1)
 	{	
 		Start_CPU();
@@ -105,5 +97,6 @@ void TIM4_IRQHandler(void)
 	Timer_IncTick();//10us一次
 	I2Cx_Peripheral(I2C2_M_BITBANG);
 	I2Cx_Peripheral(I2C4_S_BITBANG);
+	SPIx_Peripheral(SPI2_M_BITBANG);
 }
 
