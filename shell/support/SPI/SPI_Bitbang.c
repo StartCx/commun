@@ -16,8 +16,14 @@ enum
 	SPI_DRIVER_WRITE_THEN_READ1,
 	SPI_DRIVER_MODE_PARAM_INIT,
 	SPI_DRIVER_TX_DATA_SET,
-	SPI_DRIVER_LOOP_TX_DATA,
-	SPI_DRIVER_LOOP_RX_DATA,
+	SPI_DRIVER_LOOP_TX_DATA_MODE0,
+	SPI_DRIVER_LOOP_RX_DATA_MODE0,
+	SPI_DRIVER_LOOP_TX_DATA_MODE1,
+	SPI_DRIVER_LOOP_RX_DATA_MODE1,
+	SPI_DRIVER_LOOP_TX_DATA_MODE2,
+	SPI_DRIVER_LOOP_RX_DATA_MODE2,
+	SPI_DRIVER_LOOP_TX_DATA_MODE3,
+	SPI_DRIVER_LOOP_RX_DATA_MODE3,
 	SPI_DRIVER_MASK_SHIFT,
 	SPI_DRIVER_RX_DATA_GET,
 	SPI_DRIVER_SIZE_COMPARE,
@@ -25,38 +31,6 @@ enum
 	SPI_DRIVER_SUM,
 };
 
-void SPI_M_Bitbang_Config(SPI_M_Bitbang_t *SPI_Driver)
-{
-	GPIO_InitTypeDef GPIO_InitStructure;
-	
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	/* CS */
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[0];
-	GPIO_Init(SPI_Driver->PORT_CS[0], &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[1];
-	GPIO_Init(SPI_Driver->PORT_CS[1], &GPIO_InitStructure);
-	/* SCK */
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_SCK;
-	GPIO_Init(SPI_Driver->PORT_SCK, &GPIO_InitStructure);
-	/* MOSI */
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_MOSI;
-	GPIO_Init(SPI_Driver->PORT_MOSI, &GPIO_InitStructure);
-	/* MISO */
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_MISO;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-	GPIO_Init(SPI_Driver->PORT_MISO, &GPIO_InitStructure);
-
-	//状态初始化
-	if( SPI_Driver->_CPOL){
-		GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
-	}else{
-		GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿   
-	}
-	GPIO_SET_HIGH(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
-	GPIO_SET_HIGH(SPI_Driver->PORT_CS[0], SPI_Driver->PIN_CS[0]);
-	GPIO_SET_HIGH(SPI_Driver->PORT_CS[1], SPI_Driver->PIN_CS[1]);
-}
 
 
 uint8_t SPI_M_Bitbang_Open(SPI_M_Bitbang_t *SPI_Driver, uint8_t CSx)
@@ -80,7 +54,7 @@ void SPI_M_Bitbang_WriteAndRead(SPI_M_Bitbang_t *SPI_Driver, uint8_t *pTxData, u
 	SPI_Driver->pTx_data = pTxData;
 	SPI_Driver->pRx_data = pRxData;
 	SPI_Driver->Size     = Size;
-	SPI_Driver->Mode = SPI_WRITE_AND_READ;
+	SPI_Driver->WR_Mode = SPI_WRITE_AND_READ;
 }
 
 void SPI_M_Bitbang_WriteThenRead(SPI_M_Bitbang_t *SPI_Driver, uint8_t *pTxData, uint16_t TxSize,uint8_t *pRxData, uint16_t RxSize)
@@ -89,17 +63,73 @@ void SPI_M_Bitbang_WriteThenRead(SPI_M_Bitbang_t *SPI_Driver, uint8_t *pTxData, 
 	SPI_Driver->TxSize   = TxSize;
 	SPI_Driver->pRx_data = pRxData;
 	SPI_Driver->RxSize   = RxSize;
-	SPI_Driver->Mode = SPI_WRITE_THEN_READ;
+	SPI_Driver->WR_Mode = SPI_WRITE_THEN_READ;
 }
 
 
 uint8_t SPI_M_Bitbang_Endp(SPI_M_Bitbang_t *SPI_Driver)
 {
-	if( SPI_Driver->Register.R15_PC == SPI_DRIVER_PROC_READY && SPI_Driver->Mode == SPI_IDLE){
+	if( SPI_Driver->Register.R15_PC == SPI_DRIVER_PROC_READY && SPI_Driver->WR_Mode == SPI_IDLE){
 		return CORE_DONE;
 	}else{
 		return CORE_RUNNING;
 	}
+}
+
+// 切换SPI模式
+void SPI_M_Bitbang_Mode(SPI_M_Bitbang_t *SPI_Driver,spi_mode_e spi_mode) {
+	SPI_Driver->SPI_Mode = spi_mode;
+    switch(SPI_Driver->SPI_Mode){
+		case SPI_MODE_0:
+			SPI_Driver->Func_Index = SPI_DRIVER_LOOP_TX_DATA_MODE0;
+			GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+		case SPI_MODE_1:
+			SPI_Driver->Func_Index = SPI_DRIVER_LOOP_TX_DATA_MODE1;
+			GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+		case SPI_MODE_2:
+			SPI_Driver->Func_Index = SPI_DRIVER_LOOP_TX_DATA_MODE2;
+			GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+		case SPI_MODE_3:
+			SPI_Driver->Func_Index = SPI_DRIVER_LOOP_TX_DATA_MODE3;
+			GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+		default:
+			SPI_Driver->Func_Index = SPI_DRIVER_LOOP_TX_DATA_MODE0;
+			GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+	}
+}
+
+
+void SPI_M_Bitbang_Config(SPI_M_Bitbang_t *SPI_Driver)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+	
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	/* CS */
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[0];
+	GPIO_Init(SPI_Driver->PORT_CS[0], &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[1];
+	GPIO_Init(SPI_Driver->PORT_CS[1], &GPIO_InitStructure);
+	/* SCK */
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_SCK;
+	GPIO_Init(SPI_Driver->PORT_SCK, &GPIO_InitStructure);
+	/* MOSI */
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_MOSI;
+	GPIO_Init(SPI_Driver->PORT_MOSI, &GPIO_InitStructure);
+	/* MISO */
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_MISO;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_Init(SPI_Driver->PORT_MISO, &GPIO_InitStructure);
+
+	GPIO_SET_HIGH(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
+	GPIO_SET_HIGH(SPI_Driver->PORT_CS[0], SPI_Driver->PIN_CS[0]);
+	GPIO_SET_HIGH(SPI_Driver->PORT_CS[1], SPI_Driver->PIN_CS[1]);
+	SPI_M_Bitbang_Mode(SPI_Driver,SPI_Driver->SPI_Mode);
 }
 
 
@@ -113,9 +143,21 @@ void SPI_M_Bitbang_Peripheral(SPI_M_Bitbang_t *SPI_Driver)
 		[SPI_DRIVER_WRITE_THEN_READ1] 	= &&SPI_DRIVER_WRITE_THEN_READ1,
 		
 		[SPI_DRIVER_MODE_PARAM_INIT] 	= &&SPI_DRIVER_MODE_PARAM_INIT,
-		[SPI_DRIVER_TX_DATA_SET]	= &&SPI_DRIVER_TX_DATA_SET,
-		[SPI_DRIVER_LOOP_TX_DATA] 	= &&SPI_DRIVER_LOOP_TX_DATA,
-		[SPI_DRIVER_LOOP_RX_DATA]	= &&SPI_DRIVER_LOOP_RX_DATA,
+		[SPI_DRIVER_TX_DATA_SET]		= &&SPI_DRIVER_TX_DATA_SET,
+		
+		[SPI_DRIVER_LOOP_TX_DATA_MODE0] = &&SPI_DRIVER_LOOP_TX_DATA_MODE0,
+		[SPI_DRIVER_LOOP_RX_DATA_MODE0]	= &&SPI_DRIVER_LOOP_RX_DATA_MODE0,
+		
+		[SPI_DRIVER_LOOP_TX_DATA_MODE1] = &&SPI_DRIVER_LOOP_TX_DATA_MODE1,
+		[SPI_DRIVER_LOOP_RX_DATA_MODE1]	= &&SPI_DRIVER_LOOP_RX_DATA_MODE1,
+		
+		[SPI_DRIVER_LOOP_TX_DATA_MODE2] = &&SPI_DRIVER_LOOP_TX_DATA_MODE2,
+		[SPI_DRIVER_LOOP_RX_DATA_MODE2]	= &&SPI_DRIVER_LOOP_RX_DATA_MODE2,
+		
+		[SPI_DRIVER_LOOP_TX_DATA_MODE3] = &&SPI_DRIVER_LOOP_TX_DATA_MODE3,
+		[SPI_DRIVER_LOOP_RX_DATA_MODE3]	= &&SPI_DRIVER_LOOP_RX_DATA_MODE3,
+		
+		
 		[SPI_DRIVER_MASK_SHIFT]		= &&SPI_DRIVER_MASK_SHIFT,
 		[SPI_DRIVER_RX_DATA_GET]	= &&SPI_DRIVER_RX_DATA_GET,
 		[SPI_DRIVER_SIZE_COMPARE]	= &&SPI_DRIVER_SIZE_COMPARE,
@@ -125,12 +167,12 @@ void SPI_M_Bitbang_Peripheral(SPI_M_Bitbang_t *SPI_Driver)
 	goto *function[SPI_Driver->Register.R15_PC];
 	
 SPI_DRIVER_PROC_READY:
-	if( SPI_Driver->Mode != SPI_IDLE){
+	if( SPI_Driver->WR_Mode != SPI_IDLE){
 		SPI_Driver->Register.R15_PC = SPI_DRIVER_MODE_SELECT;
 	}
 	return;
 SPI_DRIVER_MODE_SELECT:
-	if( SPI_Driver->Mode == SPI_WRITE_AND_READ){
+	if( SPI_Driver->WR_Mode == SPI_WRITE_AND_READ){
 		SPI_Driver->Register.R14_LR = SPI_DRIVER_PROC_ENDP;
 		SPI_Driver->Register.R15_PC = SPI_DRIVER_MODE_PARAM_INIT;
 	}else{
@@ -170,38 +212,90 @@ SPI_DRIVER_TX_DATA_SET:
 	}else{
 		SPI_Driver->Register.R3_cout = 0xFF;
 	}
-	SPI_Driver->Register.R15_PC = SPI_DRIVER_LOOP_TX_DATA;
+	SPI_Driver->Register.R15_PC = SPI_Driver->Func_Index;
 	return;
-SPI_DRIVER_LOOP_TX_DATA:
-	if( (SPI_Driver->_CPOL^SPI_Driver->_CPHA) == 1){
-		GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
-	}else{
-		GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿   
-	}
+/********************************************************************************************************************/
+SPI_DRIVER_LOOP_TX_DATA_MODE0:
 	if( SPI_Driver->Register.R3_cout & SPI_Driver->Register.R10_Mask){ //发送数据
 		GPIO_SET_HIGH(SPI_Driver->PORT_MOSI, SPI_Driver->PIN_MOSI);
 	}else{
 		GPIO_SET_LOW(SPI_Driver->PORT_MOSI, SPI_Driver->PIN_MOSI);
 	}
-	SPI_Driver->Register.R15_PC = SPI_DRIVER_LOOP_RX_DATA;
+	GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+	SPI_Driver->Register.R15_PC = SPI_DRIVER_LOOP_RX_DATA_MODE0;
 	return;
-SPI_DRIVER_LOOP_RX_DATA:
-	if( (SPI_Driver->_CPOL^SPI_Driver->_CPHA) == 1){
-		GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿   
-	}else{
-		GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
-	}
+SPI_DRIVER_LOOP_RX_DATA_MODE0:
 	if( GPIO_GET_STATE(SPI_Driver->PORT_MISO, SPI_Driver->PIN_MISO) == 1){//读取状态
 		SPI_Driver->Register.R2_cin |=  SPI_Driver->Register.R10_Mask;  // 将特定位设置为高
 	}else{
 		SPI_Driver->Register.R2_cin &= ~SPI_Driver->Register.R10_Mask;  // 将特定位设置为低
 	}
+	GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿   
 	SPI_Driver->Register.R15_PC = SPI_DRIVER_MASK_SHIFT;
 	return;
+/********************************************************************************************************************/
+SPI_DRIVER_LOOP_TX_DATA_MODE1:
+	GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+	if( SPI_Driver->Register.R3_cout & SPI_Driver->Register.R10_Mask){ //发送数据
+		GPIO_SET_HIGH(SPI_Driver->PORT_MOSI, SPI_Driver->PIN_MOSI);
+	}else{
+		GPIO_SET_LOW(SPI_Driver->PORT_MOSI, SPI_Driver->PIN_MOSI);
+	}
+	SPI_Driver->Register.R15_PC = SPI_DRIVER_LOOP_RX_DATA_MODE1;
+	return;
+SPI_DRIVER_LOOP_RX_DATA_MODE1:
+	GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿 
+	if( GPIO_GET_STATE(SPI_Driver->PORT_MISO, SPI_Driver->PIN_MISO) == 1){//读取状态
+		SPI_Driver->Register.R2_cin |=  SPI_Driver->Register.R10_Mask;  // 将特定位设置为高
+	}else{
+		SPI_Driver->Register.R2_cin &= ~SPI_Driver->Register.R10_Mask;  // 将特定位设置为低
+	}  
+	SPI_Driver->Register.R15_PC = SPI_DRIVER_MASK_SHIFT;
+	return;
+/********************************************************************************************************************/
+SPI_DRIVER_LOOP_TX_DATA_MODE2:
+	if( SPI_Driver->Register.R3_cout & SPI_Driver->Register.R10_Mask){ //发送数据
+		GPIO_SET_HIGH(SPI_Driver->PORT_MOSI, SPI_Driver->PIN_MOSI);
+	}else{
+		GPIO_SET_LOW(SPI_Driver->PORT_MOSI, SPI_Driver->PIN_MOSI);
+	}
+	GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+	SPI_Driver->Register.R15_PC = SPI_DRIVER_LOOP_RX_DATA_MODE2;
+	return;
+SPI_DRIVER_LOOP_RX_DATA_MODE2:
+	if( GPIO_GET_STATE(SPI_Driver->PORT_MISO, SPI_Driver->PIN_MISO) == 1){//读取状态
+		SPI_Driver->Register.R2_cin |=  SPI_Driver->Register.R10_Mask;  // 将特定位设置为高
+	}else{
+		SPI_Driver->Register.R2_cin &= ~SPI_Driver->Register.R10_Mask;  // 将特定位设置为低
+	}
+	GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿   
+	SPI_Driver->Register.R15_PC = SPI_DRIVER_MASK_SHIFT;
+	return;
+	
+/********************************************************************************************************************/
+SPI_DRIVER_LOOP_TX_DATA_MODE3:
+	GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+	if( SPI_Driver->Register.R3_cout & SPI_Driver->Register.R10_Mask){ //发送数据
+		GPIO_SET_HIGH(SPI_Driver->PORT_MOSI, SPI_Driver->PIN_MOSI);
+	}else{
+		GPIO_SET_LOW(SPI_Driver->PORT_MOSI, SPI_Driver->PIN_MOSI);
+	}
+	SPI_Driver->Register.R15_PC = SPI_DRIVER_LOOP_RX_DATA_MODE3;
+	return;
+SPI_DRIVER_LOOP_RX_DATA_MODE3:
+	GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿 
+	if( GPIO_GET_STATE(SPI_Driver->PORT_MISO, SPI_Driver->PIN_MISO) == 1){//读取状态
+		SPI_Driver->Register.R2_cin |=  SPI_Driver->Register.R10_Mask;  // 将特定位设置为高
+	}else{
+		SPI_Driver->Register.R2_cin &= ~SPI_Driver->Register.R10_Mask;  // 将特定位设置为低
+	}  
+	SPI_Driver->Register.R15_PC = SPI_DRIVER_MASK_SHIFT;
+	return;
+/********************************************************************************************************************/
 SPI_DRIVER_MASK_SHIFT:
 	SPI_Driver->Register.R10_Mask >>= 1;
 	if( SPI_Driver->Register.R10_Mask > 0){
-		SPI_Driver->Register.R15_PC = SPI_DRIVER_LOOP_TX_DATA;
+		SPI_Driver->Register.R15_PC = SPI_Driver->Func_Index;
 	}else{
 		SPI_Driver->Register.R15_PC = SPI_DRIVER_RX_DATA_GET;
 	}
@@ -224,7 +318,7 @@ SPI_DRIVER_SIZE_COMPARE:
 	}
 	return;
 SPI_DRIVER_PROC_ENDP:	
-	SPI_Driver->Mode = SPI_IDLE;
+	SPI_Driver->WR_Mode = SPI_IDLE;
 	SPI_Driver->Register.R15_PC = SPI_DRIVER_PROC_READY;
 	return;
 }

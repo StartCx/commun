@@ -3,8 +3,7 @@
 
 SPI_M_Hardware_t SPI1_Master = {
 	.SPIx		= SPI1,
-	._CPOL 		= SPI_CPOL_Low,
-	._CPHA 		= SPI_CPHA_1Edge,
+	.SPI_Mode	= SPI_MODE_3,
 	.Delay_time	= 100,
 	.Lock 		= CORE_UNLOCK,
 	.PORT_SCK  	= GPIOA,
@@ -24,12 +23,12 @@ SPI_M_Hardware_t SPI1_Master = {
 	.Close			= SPI_M_Hardware_Close,
 	.Open			= SPI_M_Hardware_Open,
 	.Endp			= SPI_M_Hardware_Endp,
+	.Mode			= SPI_M_Hardware_Mode,
 };
 
 
 SPI_M_Bitbang_t SPI2_Master = {
-	._CPOL = 0,
-	._CPHA = 0,
+	.SPI_Mode	= SPI_MODE_3,
 	.Register.R12_Lock = CORE_UNLOCK,
 	.PORT_SCK  = GPIOB,
 	.PIN_SCK   = GPIO_Pin_13,
@@ -49,14 +48,14 @@ SPI_M_Bitbang_t SPI2_Master = {
 	.Close			= SPI_M_Bitbang_Close,
 	.Open			= SPI_M_Bitbang_Open,
 	.Endp			= SPI_M_Bitbang_Endp,
+	.Mode			= SPI_M_Bitbang_Mode,
 };
 
 
 
 
 SPI_M_Software_t SPI3_Master = {
-	._CPOL 		= 0,
-	._CPHA 		= 0,
+	.SPI_Mode	= SPI_MODE_3,
 	.Delay_time	= 10,
 	.Lock 		= CORE_UNLOCK,
 	.PORT_SCK  	= GPIOC,
@@ -76,6 +75,7 @@ SPI_M_Software_t SPI3_Master = {
 	.Close			= SPI_M_Software_Close,
 	.Open			= SPI_M_Software_Open,
 	.Endp			= SPI_M_Software_Endp,
+	.Mode			= SPI_M_Software_Mode,
 };
 
 void SPIx_Peripheral(uint8_t Bus)
@@ -92,6 +92,16 @@ void SPIx_Init(uint8_t Bus)
 		case SPI1_M_HARDWARE: SPI1_Master.Init(&SPI1_Master);break;
 		case SPI2_M_BITBANG:  SPI2_Master.Init(&SPI2_Master);break;
 		case SPI3_M_SOFTWARE: SPI3_Master.Init(&SPI3_Master);break;
+		default:break;
+	}
+}
+
+void SPIx_Mode(uint8_t Bus, spi_mode_e spi_mode)
+{
+	switch(Bus){
+		case SPI1_M_HARDWARE: SPI1_Master.Mode(&SPI1_Master,spi_mode);break;
+		case SPI2_M_BITBANG:  SPI2_Master.Mode(&SPI2_Master,spi_mode);break;
+		case SPI3_M_SOFTWARE: SPI3_Master.Mode(&SPI3_Master,spi_mode);break;
 		default:break;
 	}
 }

@@ -27,6 +27,7 @@ uint8_t SPIx_Open(uint8_t Bus, uint8_t CSx);
 uint8_t SPIx_Endp(uint8_t Bus);
 void SPIx_WriteAndRead(uint8_t Bus, uint8_t *pTxData, uint8_t *pRxData, uint16_t Size);
 void SPIx_WriteThenRead(uint8_t Bus, uint8_t *pTxData, uint16_t TxSize,uint8_t *pRxData, uint16_t RxSize);
+void SPIx_Mode(uint8_t Bus, spi_mode_e spi_mode);
 
 
 #endif

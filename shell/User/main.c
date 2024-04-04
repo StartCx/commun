@@ -58,24 +58,26 @@ int main(void)
 	
 	TIM4_Configuration();
 	Shell_Device.Init(&Shell_Device);
-	Led_Device.Init(&Led_Device);
 	__IO uint32_t FlashID = 0;
-	//****************************************************************************/
-	FlashID = SPI_FLASH_ReadID(SPI3_M_SOFTWARE, 0);	
+//****************************************************************************/
+	
+	FlashID = SPI_FLASH_ReadID(SPI3_M_SOFTWARE, 1);	
+	printf("\r\n FlashID is 0x%X\r\n", FlashID);
+	FlashID = SPI_FLASH_ReadID(SPI3_M_SOFTWARE, 1);	
 	printf("\r\n FlashID is 0x%X\r\n", FlashID);
 	while(1)
-	{	
+	{
 		Start_CPU();
 		
-		if( Scheduler(&Led_Device.Timer) == 1)//100us执行一次
-		{
-			Led_Device.Driver(&Led_Device);
-		}
-		if( Scheduler(&Shell_Device.Timer) == 1)//100us执行一次
-		{
-			Shell_Device.Driver(&Shell_Device);
-			Shell_Device.Put(&Shell_Device);
-		}
+//		if( Scheduler(&Led_Device.Timer) == 1)//100us执行一次
+//		{
+//			Led_Device.Driver(&Led_Device);
+//		}
+//		if( Scheduler(&Shell_Device.Timer) == 1)//100us执行一次
+//		{
+//			Shell_Device.Driver(&Shell_Device);
+//			Shell_Device.Put(&Shell_Device);
+//		}
 		
 		Stop_CPU(10);
 	}
@@ -92,8 +94,6 @@ void USART1_IRQHandler(void)
 void TIM4_IRQHandler(void)
 {	
 	TIM_ClearFlag(TIM4, TIM_FLAG_Update);
-	servo_output_angle_task(&Servo_Output);//数字舵机
-	PWM_Out_Put(&Simulated_PWM);
 	Timer_IncTick();//10us一次
 	I2Cx_Peripheral(I2C2_M_BITBANG);
 	I2Cx_Peripheral(I2C4_S_BITBANG);

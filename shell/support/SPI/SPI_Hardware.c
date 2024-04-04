@@ -1,50 +1,6 @@
 #include "SPI_Hardware.h"
 
 
-void SPI_M_Hardware_Config(SPI_M_Hardware_t *SPI_Driver)
-{
-	GPIO_InitTypeDef GPIO_InitStructure;
-	SPI_InitTypeDef  SPI_InitStructure;
-	
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	/* CS */
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[0];
-	GPIO_Init(SPI_Driver->PORT_CS[0], &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[1];
-	GPIO_Init(SPI_Driver->PORT_CS[1], &GPIO_InitStructure);
-	/* SCK */
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_SCK;
-	GPIO_Init(SPI_Driver->PORT_SCK, &GPIO_InitStructure);
-	/* MOSI */
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_MOSI;
-	GPIO_Init(SPI_Driver->PORT_MOSI, &GPIO_InitStructure);
-	/* MISO */
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_MISO;
-	GPIO_Init(SPI_Driver->PORT_MISO, &GPIO_InitStructure);
-
-	GPIO_SET_HIGH(SPI_Driver->PORT_CS[0], SPI_Driver->PIN_CS[0]);
-	GPIO_SET_HIGH(SPI_Driver->PORT_CS[1], SPI_Driver->PIN_CS[1]);
-	
-	/* SPI 模式配置 */
-	// FLASH芯片 支持SPI模式0及模式3，据此设置CPOL CPHA
-	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
-	SPI_InitStructure.SPI_CPOL = SPI_Driver->_CPOL;
-	SPI_InitStructure.SPI_CPHA = SPI_Driver->_CPHA;
-	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
-	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
-	SPI_InitStructure.SPI_CRCPolynomial = 7;
-	SPI_Init(SPI_Driver->SPIx , &SPI_InitStructure);
-	/* 使能 SPI  */
-	SPI_Cmd(SPI_Driver->SPIx , ENABLE);
-}
-
-
-
 
 uint8_t SPI_M_Hardware_Open(SPI_M_Hardware_t *SPI_Driver, uint8_t CSx)
 {
@@ -69,6 +25,77 @@ uint8_t SPI_M_Hardware_Endp(SPI_M_Hardware_t *SPI_Driver)
 	return CORE_DONE;
 }
 
+// 切换SPI模式
+void SPI_M_Hardware_Mode(SPI_M_Hardware_t *SPI_Driver,spi_mode_e spi_mode) {
+	SPI_InitTypeDef  SPI_InitStructure;
+    SPI_Cmd(SPI_Driver->SPIx, DISABLE); // 关闭SPI1
+	SPI_Driver->SPI_Mode = spi_mode;
+    switch(SPI_Driver->SPI_Mode){
+		case SPI_MODE_0:
+			SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+			SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
+			GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+		case SPI_MODE_1:
+			SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+			SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
+			GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+		case SPI_MODE_2:
+			SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;
+			SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
+			GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+		case SPI_MODE_3:
+			SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;
+			SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
+			GPIO_SET_HIGH(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+		default:
+			SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+			SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
+			GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+			break;
+	}
+	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
+	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
+	SPI_InitStructure.SPI_CRCPolynomial = 7;
+	SPI_Init(SPI_Driver->SPIx , &SPI_InitStructure);
+    SPI_Cmd(SPI_Driver->SPIx, ENABLE); // 重新使能SPI1
+}
+
+
+void SPI_M_Hardware_Config(SPI_M_Hardware_t *SPI_Driver)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+	
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	/* CS */
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[0];
+	GPIO_Init(SPI_Driver->PORT_CS[0], &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[1];
+	GPIO_Init(SPI_Driver->PORT_CS[1], &GPIO_InitStructure);
+	/* SCK */
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_SCK;
+	GPIO_Init(SPI_Driver->PORT_SCK, &GPIO_InitStructure);
+	/* MOSI */
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_MOSI;
+	GPIO_Init(SPI_Driver->PORT_MOSI, &GPIO_InitStructure);
+	/* MISO */
+	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_MISO;
+	GPIO_Init(SPI_Driver->PORT_MISO, &GPIO_InitStructure);
+
+	GPIO_SET_HIGH(SPI_Driver->PORT_CS[0], SPI_Driver->PIN_CS[0]);
+	GPIO_SET_HIGH(SPI_Driver->PORT_CS[1], SPI_Driver->PIN_CS[1]);
+	/* 使能 SPI  */
+	SPI_M_Hardware_Mode(SPI_Driver, SPI_Driver->SPI_Mode);
+}
 
 /**************************************************************************************************************/
 uint8_t SPI_M_Hardware_WriteRead(SPI_M_Hardware_t *SPI_Driver,uint8_t TxData)
