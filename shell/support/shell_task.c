@@ -1,12 +1,10 @@
 #include "shell_task.h"
 
-Shell_Task_t Shell_Task;
+static Shell_Cmd_Task_t Shell_Task;
 static sscanf_t sscanf_driver;
-fmt_t fmt_driver;
-char str[100];
-
+static fmt_t fmt_driver;
 extern Shell_Device_Class_t Shell_Device;
-extern GPIO_Output_Device_t Led_Device;
+
 /******************************************************led****************************************************/
 
 
@@ -415,6 +413,7 @@ int do_i2cdetect(int argc,char *argv[])
 		I2C_DETECT_PROC_GROUP0_3,
 		I2C_DETECT_PROC_GROUP0_4,
 		I2C_DETECT_PROC_GROUP1,
+		I2C_DETECT_PROC_GROUP1_ERROR,
 		I2C_DETECT_PROC_GROUP2,
 		I2C_DETECT_PROC_GROUP3,
 		I2C_DETECT_PROC_GROUP4,
@@ -436,7 +435,8 @@ int do_i2cdetect(int argc,char *argv[])
 		[I2C_DETECT_PROC_GROUP0_3] 	= &&I2C_DETECT_PROC_GROUP0_3,
 		[I2C_DETECT_PROC_GROUP0_4] 	= &&I2C_DETECT_PROC_GROUP0_4,
 		
-		[I2C_DETECT_PROC_GROUP1] 	= &&I2C_DETECT_PROC_GROUP1,
+		[I2C_DETECT_PROC_GROUP1] 		= &&I2C_DETECT_PROC_GROUP1,
+		[I2C_DETECT_PROC_GROUP1_ERROR] 	= &&I2C_DETECT_PROC_GROUP1_ERROR,
 		[I2C_DETECT_PROC_GROUP2] 	= &&I2C_DETECT_PROC_GROUP2,
 		[I2C_DETECT_PROC_GROUP3] 	= &&I2C_DETECT_PROC_GROUP3,
 		[I2C_DETECT_PROC_GROUP4] 	= &&I2C_DETECT_PROC_GROUP4,
@@ -474,6 +474,7 @@ I2C_DETECT_PROC_GROUP0_2:
 I2C_DETECT_PROC_GROUP0_2_1:
 	if( Shell_Task.Register.R5_Object < I2C_BUS_SUM){
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP1;
+		Shell_Task.Register.retry  = 1000;
 	}else{
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP0_3;
 	}
@@ -497,6 +498,20 @@ I2C_DETECT_PROC_GROUP0_4:
 I2C_DETECT_PROC_GROUP1:
 	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP2;
+	}else if( KeyboardInterrupt(&Shell_Device) == 1){
+		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP9;
+	}else if( Shell_Task.Register.retry > 0){
+		Shell_Task.Register.retry--;
+	}else{
+		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP1_ERROR;
+	}
+	return CORE_RUNNING;
+I2C_DETECT_PROC_GROUP1_ERROR:
+	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = I2C_DETECT_PROC_GROUP9;
+		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP7;
+		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP2:
@@ -580,6 +595,7 @@ int do_i2cdump(int argc,char *argv[])
 		I2C_DUMP_PROC_GROUP3,
 		I2C_DUMP_PROC_GROUP4,
 		I2C_DUMP_PROC_GROUP5,
+		I2C_DUMP_PROC_GROUP5_ERROR,
 		I2C_DUMP_PROC_GROUP6,
 		I2C_DUMP_PROC_GROUP7,
 		I2C_DUMP_PROC_GROUP8,
@@ -606,6 +622,7 @@ int do_i2cdump(int argc,char *argv[])
 		[I2C_DUMP_PROC_GROUP3] 	= &&I2C_DUMP_PROC_GROUP3,
 		[I2C_DUMP_PROC_GROUP4] 	= &&I2C_DUMP_PROC_GROUP4,
 		[I2C_DUMP_PROC_GROUP5] 	= &&I2C_DUMP_PROC_GROUP5,
+		[I2C_DUMP_PROC_GROUP5_ERROR] = &&I2C_DUMP_PROC_GROUP5_ERROR,
 		[I2C_DUMP_PROC_GROUP6] 	= &&I2C_DUMP_PROC_GROUP6,
 		[I2C_DUMP_PROC_GROUP7] 	= &&I2C_DUMP_PROC_GROUP7,
 		[I2C_DUMP_PROC_GROUP8]	= &&I2C_DUMP_PROC_GROUP8,
@@ -673,6 +690,7 @@ I2C_DUMP_PROC_GROUP3:
 	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP5;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
+		Shell_Task.Register.retry  = 1000;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
@@ -687,6 +705,20 @@ I2C_DUMP_PROC_GROUP4:
 I2C_DUMP_PROC_GROUP5:
 	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP6;
+	}else if( KeyboardInterrupt(&Shell_Device) == 1){
+		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP12;
+	}else if( Shell_Task.Register.retry > 0){
+		Shell_Task.Register.retry--;
+	}else{
+		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP5_ERROR;
+	}
+	return CORE_RUNNING;
+I2C_DUMP_PROC_GROUP5_ERROR:
+	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP12;
+		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
+		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP6:
@@ -808,6 +840,7 @@ int do_i2cget(int argc,char *argv[])
 		I2C_GET_PROC_GROUP13,
 		I2C_GET_PROC_GROUP14,
 		I2C_GET_PROC_GROUP15,
+		I2C_GET_PROC_GROUP15_ERROR,
 		I2C_GET_PROC_GROUP16,
 		
 		I2C_GET_PROC_GROUP17,
@@ -844,6 +877,7 @@ int do_i2cget(int argc,char *argv[])
 		[I2C_GET_PROC_GROUP13]	= &&I2C_GET_PROC_GROUP13,
 		[I2C_GET_PROC_GROUP14]	= &&I2C_GET_PROC_GROUP14,
 		[I2C_GET_PROC_GROUP15]	= &&I2C_GET_PROC_GROUP15,
+		[I2C_GET_PROC_GROUP15_ERROR]= &&I2C_GET_PROC_GROUP15_ERROR,
 		[I2C_GET_PROC_GROUP16]	= &&I2C_GET_PROC_GROUP16,
 		[I2C_GET_PROC_GROUP17]	= &&I2C_GET_PROC_GROUP17,
 		[I2C_GET_PROC_GROUP18]	= &&I2C_GET_PROC_GROUP18,
@@ -949,6 +983,7 @@ I2C_GET_PROC_GROUP13:
 	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP15;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP14;
+		Shell_Task.Register.retry  = 1000;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
@@ -963,6 +998,20 @@ I2C_GET_PROC_GROUP14:
 I2C_GET_PROC_GROUP15:
 	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP16;
+	}else if( KeyboardInterrupt(&Shell_Device) == 1){
+		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP21;
+	}else if( Shell_Task.Register.retry > 0){
+		Shell_Task.Register.retry--;
+	}else{
+		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP15_ERROR;
+	}
+	return CORE_RUNNING;
+I2C_GET_PROC_GROUP15_ERROR:
+	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP21;
+		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
+		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP16:
@@ -1104,6 +1153,7 @@ int do_i2cset(int argc,char *argv[])
 		I2C_SET_PROC_GROUP13,
 		I2C_SET_PROC_GROUP14,
 		I2C_SET_PROC_GROUP15,
+		I2C_SET_PROC_GROUP15_ERROR,
 		I2C_SET_PROC_GROUP16,
 		
 		I2C_SET_PROC_GROUP17,
@@ -1135,6 +1185,7 @@ int do_i2cset(int argc,char *argv[])
 		[I2C_SET_PROC_GROUP13]	= &&I2C_SET_PROC_GROUP13,
 		[I2C_SET_PROC_GROUP14]	= &&I2C_SET_PROC_GROUP14,
 		[I2C_SET_PROC_GROUP15]	= &&I2C_SET_PROC_GROUP15,
+		[I2C_SET_PROC_GROUP15_ERROR]= &&I2C_SET_PROC_GROUP15_ERROR,
 		[I2C_SET_PROC_GROUP16]	= &&I2C_SET_PROC_GROUP16,
 		[I2C_SET_PROC_GROUP17]	= &&I2C_SET_PROC_GROUP17,
 		[I2C_SET_PROC_GROUP18]	= &&I2C_SET_PROC_GROUP18,
@@ -1236,6 +1287,7 @@ I2C_SET_PROC_GROUP13:
 	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP15;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP14;
+		Shell_Task.Register.retry  = 1000;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
@@ -1250,6 +1302,20 @@ I2C_SET_PROC_GROUP14:
 I2C_SET_PROC_GROUP15:
 	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP16;
+	}else if( KeyboardInterrupt(&Shell_Device) == 1){
+		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP21;
+	}else if( Shell_Task.Register.retry > 0){
+		Shell_Task.Register.retry--;
+	}else{
+		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP15_ERROR;
+	}
+	return CORE_RUNNING;
+I2C_SET_PROC_GROUP15_ERROR:
+	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP21;
+		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP20;
+		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP16:
@@ -1360,6 +1426,7 @@ int do_i2cwrite(int argc,char *argv[])
 		I2C_WRITE_PROC_GROUP13,
 		I2C_WRITE_PROC_GROUP14,
 		I2C_WRITE_PROC_GROUP15,
+		I2C_WRITE_PROC_GROUP15_ERROR,
 		I2C_WRITE_PROC_GROUP16,
 		
 		I2C_WRITE_PROC_GROUP17,
@@ -1388,6 +1455,7 @@ int do_i2cwrite(int argc,char *argv[])
 		[I2C_WRITE_PROC_GROUP13]	= &&I2C_WRITE_PROC_GROUP13,
 		[I2C_WRITE_PROC_GROUP14]	= &&I2C_WRITE_PROC_GROUP14,
 		[I2C_WRITE_PROC_GROUP15]	= &&I2C_WRITE_PROC_GROUP15,
+		[I2C_WRITE_PROC_GROUP15_ERROR]	= &&I2C_WRITE_PROC_GROUP15_ERROR,
 		[I2C_WRITE_PROC_GROUP16]	= &&I2C_WRITE_PROC_GROUP16,
 		[I2C_WRITE_PROC_GROUP17]	= &&I2C_WRITE_PROC_GROUP17,
 		[I2C_WRITE_PROC_GROUP18]	= &&I2C_WRITE_PROC_GROUP18,
@@ -1472,10 +1540,10 @@ I2C_WRITE_PROC_GROUP13:
 	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP15;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP14;
+		Shell_Task.Register.retry  = 1000;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
-	
 I2C_WRITE_PROC_GROUP14:
 	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
 		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
@@ -1487,6 +1555,20 @@ I2C_WRITE_PROC_GROUP14:
 I2C_WRITE_PROC_GROUP15:
 	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP16;
+	}else if( KeyboardInterrupt(&Shell_Device) == 1){
+		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP21;
+	}else if( Shell_Task.Register.retry > 0){
+		Shell_Task.Register.retry--;
+	}else{
+		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP15_ERROR;
+	}
+	return CORE_RUNNING;
+I2C_WRITE_PROC_GROUP15_ERROR:
+	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP21;
+		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP20;
+		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP16:
@@ -1597,6 +1679,7 @@ int do_i2cread(int argc,char *argv[])
 		I2C_READ_PROC_GROUP13,
 		I2C_READ_PROC_GROUP14,
 		I2C_READ_PROC_GROUP15,
+		I2C_READ_PROC_GROUP15_ERROR,
 		I2C_READ_PROC_GROUP16,
 		
 		I2C_READ_PROC_GROUP17,
@@ -1628,6 +1711,7 @@ int do_i2cread(int argc,char *argv[])
 		[I2C_READ_PROC_GROUP13]	= &&I2C_READ_PROC_GROUP13,
 		[I2C_READ_PROC_GROUP14]	= &&I2C_READ_PROC_GROUP14,
 		[I2C_READ_PROC_GROUP15]	= &&I2C_READ_PROC_GROUP15,
+		[I2C_READ_PROC_GROUP15_ERROR]= &&I2C_READ_PROC_GROUP15_ERROR,
 		[I2C_READ_PROC_GROUP16]	= &&I2C_READ_PROC_GROUP16,
 		[I2C_READ_PROC_GROUP17]	= &&I2C_READ_PROC_GROUP17,
 		[I2C_READ_PROC_GROUP18]	= &&I2C_READ_PROC_GROUP18,
@@ -1709,6 +1793,7 @@ I2C_READ_PROC_GROUP13:
 	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP15;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP14;
+		Shell_Task.Register.retry  = 1000;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
@@ -1723,6 +1808,20 @@ I2C_READ_PROC_GROUP14:
 I2C_READ_PROC_GROUP15:
 	if( I2Cx_Open(Shell_Task.Register.R5_Object) == CORE_SUCCESS){
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP16;
+	}else if( KeyboardInterrupt(&Shell_Device) == 1){
+		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP21;
+	}else if( Shell_Task.Register.retry > 0){
+		Shell_Task.Register.retry--;
+	}else{
+		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP15_ERROR;
+	}
+	return CORE_RUNNING;
+I2C_READ_PROC_GROUP15_ERROR:
+	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP21;
+		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
+		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP16:
@@ -1945,262 +2044,294 @@ ADC_PROC_GROUP8:
 
 
 
-//int do_spi(int argc,char *argv[])
-//{
-//	enum
-//	{
-//		SPI_STATE_ARGC_COMP,
-//		SPI_STATE_BUS_GET,
-//		SPI_STATE_BUS_GET_SUCCESS,
-//		SPI_STATE_ERROR_ECHO,
-//		SPI_STATE_BUS_NUM_COMP,
-//		
-//		SPI_STATE_DEVICE_GET,
-//		SPI_STATE_DEVICE_GET_SUCCESS,
-//		SPI_STATE_DEVICE_NUM_COMP,
-//		
-//		SPI_STATE_OPEN_DEVICE,
-//		SPI_STATE_TX_DATA_PARAM,
-//		SPI_STATE_TX_DATA_PARAM_START,
-//		SPI_STATE_TX_DATA_PARAM_SUCCESS,
-//		SPI_STATE_RX_DATA_PARAM_START,
-//		SPI_STATE_RX_DATA_PARAM_SUCCESS,
-//		
-//		SPI_STATE_TX_DATA_ECHO,
-//		SPI_STATE_TX_DATA_ECHO_HEAD,
-//		SPI_STATE_TX_DATA_ECHO_START,
-//		SPI_STATE_DATA_ECHO_QUEUE,
-//		
-//		SPI_STATE_WRITE_READ_DEVICE,
-//		SPI_STATE_WRITE_READ_DEVICE_WAIT,
-//		SPI_STATE_ECHO_READ_DATA,
-//		SPI_STATE_RX_DATA_ECHO_HEAD,
-//		SPI_STATE_ECHO_READ_DATA_START,
-//		SPI_STATE_CLOSE_SPI,
-//		
-//		SPI_STATE_ERROR_ECHO_QUEUE,
-//		SPI_STATE_SUM,
-//	};
+int do_spi(int argc,char *argv[])
+{
+	enum
+	{
+		SPI_STATE_ARGC_COMP,
+		SPI_STATE_BUS_GET,
+		SPI_STATE_BUS_GET_SUCCESS,
+		SPI_STATE_ERROR_ECHO,
+		SPI_STATE_BUS_NUM_COMP,
+		
+		SPI_STATE_DEVICE_GET,
+		SPI_STATE_DEVICE_GET_SUCCESS,
+		SPI_STATE_DEVICE_NUM_COMP,
+		
+		SPI_STATE_OPEN_DEVICE,
+		SPI_STATE_OPEN_DEVICE_ERROR,
+		SPI_STATE_TX_DATA_PARAM,
+		SPI_STATE_TX_DATA_PARAM_START,
+		SPI_STATE_TX_DATA_PARAM_SUCCESS,
+		SPI_STATE_RX_DATA_PARAM_START,
+		SPI_STATE_RX_DATA_PARAM_SUCCESS,
+		
+		SPI_STATE_TX_DATA_ECHO,
+		SPI_STATE_TX_DATA_ECHO_HEAD,
+		SPI_STATE_TX_DATA_ECHO_START,
+		SPI_STATE_DATA_ECHO_QUEUE,
+		
+		SPI_STATE_WRITE_READ_DEVICE,
+		SPI_STATE_WRITE_READ_DEVICE_WAIT,
+		SPI_STATE_ECHO_READ_DATA,
+		SPI_STATE_RX_DATA_ECHO_HEAD,
+		SPI_STATE_ECHO_READ_DATA_START,
+		SPI_STATE_CLOSE_SPI_ENTER,
+		SPI_STATE_CLOSE_SPI,
+		SPI_STATE_CLOSE_SPI_1,
+		
+		SPI_STATE_ERROR_ECHO_QUEUE,
+		SPI_STATE_SUM,
+	};
 
-//	static const void *function[SPI_STATE_SUM] = {
-//		[SPI_STATE_ARGC_COMP] 			= &&SPI_STATE_ARGC_COMP,
-//		[SPI_STATE_BUS_GET] 			= &&SPI_STATE_BUS_GET,
-//		[SPI_STATE_BUS_GET_SUCCESS]		= &&SPI_STATE_BUS_GET_SUCCESS,
-//		[SPI_STATE_ERROR_ECHO] 			= &&SPI_STATE_ERROR_ECHO,
-//		[SPI_STATE_BUS_NUM_COMP]		= &&SPI_STATE_BUS_NUM_COMP,
-//		
-//		[SPI_STATE_DEVICE_GET] 			= &&SPI_STATE_DEVICE_GET,
-//		[SPI_STATE_DEVICE_GET_SUCCESS]	= &&SPI_STATE_DEVICE_GET_SUCCESS,
-//		[SPI_STATE_DEVICE_NUM_COMP]		= &&SPI_STATE_DEVICE_NUM_COMP,
-//		
-//		[SPI_STATE_OPEN_DEVICE]			= &&SPI_STATE_OPEN_DEVICE,
-//		[SPI_STATE_TX_DATA_PARAM]		= &&SPI_STATE_TX_DATA_PARAM,
-//		[SPI_STATE_TX_DATA_PARAM_START]	= &&SPI_STATE_TX_DATA_PARAM_START,
-//		[SPI_STATE_TX_DATA_PARAM_SUCCESS]= &&SPI_STATE_TX_DATA_PARAM_SUCCESS,
-//		[SPI_STATE_RX_DATA_PARAM_START]	= &&SPI_STATE_RX_DATA_PARAM_START,
-//		[SPI_STATE_RX_DATA_PARAM_SUCCESS]= &&SPI_STATE_RX_DATA_PARAM_SUCCESS,
-//		[SPI_STATE_TX_DATA_ECHO]		= &&SPI_STATE_TX_DATA_ECHO,
-//		[SPI_STATE_TX_DATA_ECHO_HEAD]	= &&SPI_STATE_TX_DATA_ECHO_HEAD,
-//		[SPI_STATE_TX_DATA_ECHO_START]	= &&SPI_STATE_TX_DATA_ECHO_START,
-//		[SPI_STATE_DATA_ECHO_QUEUE]		= &&SPI_STATE_DATA_ECHO_QUEUE,
-//		
-//		[SPI_STATE_WRITE_READ_DEVICE]	= &&SPI_STATE_WRITE_READ_DEVICE,
-//		[SPI_STATE_WRITE_READ_DEVICE_WAIT]= &&SPI_STATE_WRITE_READ_DEVICE_WAIT,
-//		[SPI_STATE_ECHO_READ_DATA]		= &&SPI_STATE_ECHO_READ_DATA,
-//		[SPI_STATE_RX_DATA_ECHO_HEAD]	= &&SPI_STATE_RX_DATA_ECHO_HEAD,
-//		[SPI_STATE_ECHO_READ_DATA_START]= &&SPI_STATE_ECHO_READ_DATA_START,
-//		[SPI_STATE_CLOSE_SPI]			= &&SPI_STATE_CLOSE_SPI,
-//		[SPI_STATE_ERROR_ECHO_QUEUE]	= &&SPI_STATE_ERROR_ECHO_QUEUE,
-//	};
-//	goto *function[Shell_Task.Register.R15_PC];
-//	
-//SPI_STATE_ARGC_COMP://第一步参数错误，报错退出
-//	if(argc >= 4){
-//		Shell_Task.Register.R15_PC = SPI_STATE_BUS_GET;
-//	}else{
-//		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_BUS_GET://第二步bus错误，报错退出
-//	string_scanf(&sscanf_driver, argv[1]);
-//	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
-//		Shell_Task.Register.R15_PC = SPI_STATE_BUS_GET_SUCCESS;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_BUS_GET_SUCCESS:
-//	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-//		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
-//	}else{
-//		Shell_Task.Register.Bus = sscanf_driver.Register.R0_Result;
-//		Shell_Task.Register.R15_PC = SPI_STATE_BUS_NUM_COMP;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_ERROR_ECHO:
-//	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-//	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-//		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO_QUEUE;
-//		Shell_Task.Register.R1_Index = 0;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_BUS_NUM_COMP:
-//	if( Shell_Task.Register.Bus == 0){
-//		Shell_Task.SPI_Driver = &SPI_Driver0;
-//		Shell_Task.Register.R15_PC = SPI_STATE_DEVICE_GET;
-//	}else{
-//		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_DEVICE_GET:
-//	string_scanf(&sscanf_driver, argv[2]);
-//	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
-//		Shell_Task.Register.R15_PC = SPI_STATE_DEVICE_GET_SUCCESS;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_DEVICE_GET_SUCCESS:
-//	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-//		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
-//	}else{
-//		Shell_Task.Register.Device = sscanf_driver.Register.R0_Result;
-//		Shell_Task.Register.R15_PC = SPI_STATE_DEVICE_NUM_COMP;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_DEVICE_NUM_COMP:
-//	if( Shell_Task.Register.Device < 2){
-//		Shell_Task.Register.R15_PC = SPI_STATE_OPEN_DEVICE;
-//	}else{
-//		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_OPEN_DEVICE:
-//	if( Shell_Task.SPI_Driver->open(Shell_Task.SPI_Driver,Shell_Task.Register.Device) == CORE_SUCCESS){
-//		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM;
-//		Shell_Task.TxLen = argc - 4;
-//		if( Shell_Task.TxLen > 16){
-//			Shell_Task.TxLen = 16;
-//		}
-//		Shell_Task.Register.R6_Count = 0;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_TX_DATA_PARAM:
-//	if( Shell_Task.Register.R6_Count < Shell_Task.TxLen){
-//		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM_START;
-//	}else{
-//		Shell_Task.Register.R15_PC = SPI_STATE_RX_DATA_PARAM_START;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_TX_DATA_PARAM_START:
-//	string_scanf(&sscanf_driver, argv[3+Shell_Task.Register.R6_Count]);
-//	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
-//		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM_SUCCESS;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_TX_DATA_PARAM_SUCCESS:	
-//	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-//		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
-//	}else{
-//		Shell_Task.TxBuf[Shell_Task.Register.R6_Count] = sscanf_driver.Register.R0_Result;
-//		Shell_Task.Register.R6_Count++;
-//		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_RX_DATA_PARAM_START:
-//	string_scanf(&sscanf_driver, argv[argc-1]);
-//	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
-//		Shell_Task.Register.R15_PC = SPI_STATE_RX_DATA_PARAM_SUCCESS;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_RX_DATA_PARAM_SUCCESS:
-//	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-//		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
-//	}else{
-//		Shell_Task.RxLen = sscanf_driver.Register.R0_Result;
-//		if( Shell_Task.RxLen > 16){
-//			Shell_Task.RxLen = 16;
-//		}
-//		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_ECHO_HEAD;
-//		Shell_Task.Register.R6_Count = 0;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_TX_DATA_ECHO:
-//	if( Shell_Task.Register.R6_Count < Shell_Task.TxLen){
-//		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_ECHO_START;
-//	}else{
-//		Shell_Task.Register.R15_PC = SPI_STATE_WRITE_READ_DEVICE;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_TX_DATA_ECHO_HEAD:
-//	string_printf(&fmt_driver, "\r\n\r\n## SPI Bus = %d, Dev = %d, Tx Length = %d, Rx Length = %d\r\n## Tx Data : ",Shell_Task.Register.Bus,Shell_Task.Register.Device, Shell_Task.TxLen, Shell_Task.RxLen);
-//	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-//		Shell_Task.Register.R14_LR = SPI_STATE_TX_DATA_ECHO;
-//		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
-//		Shell_Task.Register.R1_Index = 0;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_TX_DATA_ECHO_START:
-//	string_printf(&fmt_driver, "0x%2x ",Shell_Task.TxBuf[Shell_Task.Register.R6_Count]);
-//	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-//		Shell_Task.Register.R14_LR = SPI_STATE_TX_DATA_ECHO;
-//		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
-//		Shell_Task.Register.R6_Count++;
-//		Shell_Task.Register.R1_Index = 0;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_DATA_ECHO_QUEUE:	
-//	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-//		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-//		Shell_Task.Register.R1_Index++;
-//	}else{
-//		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_WRITE_READ_DEVICE:
-//	Shell_Task.SPI_Driver->write_then_read(Shell_Task.SPI_Driver,Shell_Task.TxBuf,Shell_Task.TxLen, Shell_Task.RxBuf,Shell_Task.RxLen);
-//	Shell_Task.Register.R15_PC = SPI_STATE_WRITE_READ_DEVICE_WAIT;
-//	return CORE_RUNNING;
-//SPI_STATE_WRITE_READ_DEVICE_WAIT:
-//	if( Shell_Task.SPI_Driver->endp(Shell_Task.SPI_Driver) == CORE_DONE){
-//		Shell_Task.Register.R15_PC = SPI_STATE_RX_DATA_ECHO_HEAD;
-//		Shell_Task.Register.R6_Count = 0;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_ECHO_READ_DATA:
-//	if( Shell_Task.Register.R6_Count < Shell_Task.RxLen){
-//		Shell_Task.Register.R15_PC = SPI_STATE_ECHO_READ_DATA_START;
-//	}else{
-//		Shell_Task.Register.R15_PC = SPI_STATE_CLOSE_SPI;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_RX_DATA_ECHO_HEAD:
-//	string_printf(&fmt_driver, "\r\n## Rx Data : ");
-//	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-//		Shell_Task.Register.R14_LR = SPI_STATE_ECHO_READ_DATA;
-//		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
-//		Shell_Task.Register.R1_Index = 0;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_ECHO_READ_DATA_START:
-//	string_printf(&fmt_driver, "0x%2x ",Shell_Task.RxBuf[Shell_Task.Register.R6_Count]);
-//	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-//		Shell_Task.Register.R14_LR = SPI_STATE_ECHO_READ_DATA;
-//		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
-//		Shell_Task.Register.R6_Count++;
-//		Shell_Task.Register.R1_Index = 0;
-//	}
-//	return CORE_RUNNING;
-//SPI_STATE_CLOSE_SPI:
-//	Shell_Task.SPI_Driver->close(Shell_Task.SPI_Driver, Shell_Task.Register.Device);
-//	Shell_Task.Register.R15_PC = SPI_STATE_ARGC_COMP;
-//	return CORE_DONE;
-//SPI_STATE_ERROR_ECHO_QUEUE:
-//	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-//		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-//		Shell_Task.Register.R1_Index++;
-//	}else{
-//		Shell_Task.Register.R15_PC = SPI_STATE_ARGC_COMP;
-//		return CORE_DONE;
-//	}
-//	return CORE_RUNNING;
-//}
+	static const void *function[SPI_STATE_SUM] = {
+		[SPI_STATE_ARGC_COMP] 			= &&SPI_STATE_ARGC_COMP,
+		[SPI_STATE_BUS_GET] 			= &&SPI_STATE_BUS_GET,
+		[SPI_STATE_BUS_GET_SUCCESS]		= &&SPI_STATE_BUS_GET_SUCCESS,
+		[SPI_STATE_ERROR_ECHO] 			= &&SPI_STATE_ERROR_ECHO,
+		[SPI_STATE_BUS_NUM_COMP]		= &&SPI_STATE_BUS_NUM_COMP,
+		
+		[SPI_STATE_DEVICE_GET] 			= &&SPI_STATE_DEVICE_GET,
+		[SPI_STATE_DEVICE_GET_SUCCESS]	= &&SPI_STATE_DEVICE_GET_SUCCESS,
+		[SPI_STATE_DEVICE_NUM_COMP]		= &&SPI_STATE_DEVICE_NUM_COMP,
+		
+		[SPI_STATE_OPEN_DEVICE]			= &&SPI_STATE_OPEN_DEVICE,
+		[SPI_STATE_OPEN_DEVICE_ERROR]	= &&SPI_STATE_OPEN_DEVICE_ERROR,
+		[SPI_STATE_TX_DATA_PARAM]		= &&SPI_STATE_TX_DATA_PARAM,
+		[SPI_STATE_TX_DATA_PARAM_START]	= &&SPI_STATE_TX_DATA_PARAM_START,
+		[SPI_STATE_TX_DATA_PARAM_SUCCESS]= &&SPI_STATE_TX_DATA_PARAM_SUCCESS,
+		[SPI_STATE_RX_DATA_PARAM_START]	= &&SPI_STATE_RX_DATA_PARAM_START,
+		[SPI_STATE_RX_DATA_PARAM_SUCCESS]= &&SPI_STATE_RX_DATA_PARAM_SUCCESS,
+		[SPI_STATE_TX_DATA_ECHO]		= &&SPI_STATE_TX_DATA_ECHO,
+		[SPI_STATE_TX_DATA_ECHO_HEAD]	= &&SPI_STATE_TX_DATA_ECHO_HEAD,
+		[SPI_STATE_TX_DATA_ECHO_START]	= &&SPI_STATE_TX_DATA_ECHO_START,
+		[SPI_STATE_DATA_ECHO_QUEUE]		= &&SPI_STATE_DATA_ECHO_QUEUE,
+		
+		[SPI_STATE_WRITE_READ_DEVICE]	= &&SPI_STATE_WRITE_READ_DEVICE,
+		[SPI_STATE_WRITE_READ_DEVICE_WAIT]= &&SPI_STATE_WRITE_READ_DEVICE_WAIT,
+		[SPI_STATE_ECHO_READ_DATA]		= &&SPI_STATE_ECHO_READ_DATA,
+		[SPI_STATE_RX_DATA_ECHO_HEAD]	= &&SPI_STATE_RX_DATA_ECHO_HEAD,
+		[SPI_STATE_ECHO_READ_DATA_START]= &&SPI_STATE_ECHO_READ_DATA_START,
+		
+		[SPI_STATE_CLOSE_SPI_ENTER]		= &&SPI_STATE_CLOSE_SPI_ENTER,
+		[SPI_STATE_CLOSE_SPI]			= &&SPI_STATE_CLOSE_SPI,
+		[SPI_STATE_CLOSE_SPI_1]			= &&SPI_STATE_CLOSE_SPI_1,
+		[SPI_STATE_ERROR_ECHO_QUEUE]	= &&SPI_STATE_ERROR_ECHO_QUEUE,
+	};
+	goto *function[Shell_Task.Register.R15_PC];
+	
+SPI_STATE_ARGC_COMP://第一步参数错误，报错退出
+	if(argc >= 4){//spi bus cs 
+		Shell_Task.Register.R15_PC = SPI_STATE_BUS_GET;
+	}else{
+		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
+	}
+	return CORE_RUNNING;
+SPI_STATE_BUS_GET://第二步bus错误，报错退出
+	string_scanf(&sscanf_driver, argv[1]);
+	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = SPI_STATE_BUS_GET_SUCCESS;
+	}
+	return CORE_RUNNING;
+SPI_STATE_BUS_GET_SUCCESS:
+	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
+	}else{
+		Shell_Task.Register.Bus = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R15_PC = SPI_STATE_BUS_NUM_COMP;
+	}
+	return CORE_RUNNING;
+SPI_STATE_ERROR_ECHO:
+	string_printf(&fmt_driver, SHELL_CMD_ERROR);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO_QUEUE;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+SPI_STATE_BUS_NUM_COMP:
+	if( Shell_Task.Register.Bus < SPI_BUS_SUM){
+		Shell_Task.Register.R15_PC = SPI_STATE_DEVICE_GET;
+	}else{
+		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
+	}
+	return CORE_RUNNING;
+SPI_STATE_DEVICE_GET:
+	string_scanf(&sscanf_driver, argv[2]);
+	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = SPI_STATE_DEVICE_GET_SUCCESS;
+	}
+	return CORE_RUNNING;
+SPI_STATE_DEVICE_GET_SUCCESS:
+	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
+	}else{
+		Shell_Task.Register.Device = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R15_PC = SPI_STATE_DEVICE_NUM_COMP;
+	}
+	return CORE_RUNNING;
+SPI_STATE_DEVICE_NUM_COMP:
+	if( Shell_Task.Register.Device < 2){
+		Shell_Task.Register.R15_PC = SPI_STATE_OPEN_DEVICE;
+		Shell_Task.Register.retry  = 1000;
+	}else{
+		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
+	}
+	return CORE_RUNNING;
+SPI_STATE_OPEN_DEVICE:
+	if( SPIx_Open( Shell_Task.Register.Bus,Shell_Task.Register.Device) == CORE_SUCCESS){
+		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM;
+		Shell_Task.TxLen = argc - 4;
+		if( Shell_Task.TxLen > 16){
+			Shell_Task.TxLen = 16;
+		}
+		Shell_Task.Register.R6_Count = 0;
+	}else if( KeyboardInterrupt(&Shell_Device) == 1){
+		Shell_Task.Register.R15_PC = SPI_STATE_CLOSE_SPI_1;
+	}else if( Shell_Task.Register.retry > 0){
+		Shell_Task.Register.retry--;
+	}else{
+		Shell_Task.Register.R15_PC = SPI_STATE_OPEN_DEVICE_ERROR;
+	}
+	return CORE_RUNNING;
+SPI_STATE_OPEN_DEVICE_ERROR:
+	string_printf(&fmt_driver, "\r\n\r\n## Open spi bus%d timeout\r\n", Shell_Task.Register.Bus);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = SPI_STATE_CLOSE_SPI_1;
+		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+SPI_STATE_TX_DATA_PARAM:
+	if( Shell_Task.Register.R6_Count < Shell_Task.TxLen){
+		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM_START;
+	}else{
+		Shell_Task.Register.R15_PC = SPI_STATE_RX_DATA_PARAM_START;
+	}
+	return CORE_RUNNING;
+SPI_STATE_TX_DATA_PARAM_START:
+	string_scanf(&sscanf_driver, argv[3+Shell_Task.Register.R6_Count]);
+	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM_SUCCESS;
+	}
+	return CORE_RUNNING;
+SPI_STATE_TX_DATA_PARAM_SUCCESS:	
+	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
+	}else{
+		Shell_Task.TxBuf[Shell_Task.Register.R6_Count] = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R6_Count++;
+		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM;
+	}
+	return CORE_RUNNING;
+SPI_STATE_RX_DATA_PARAM_START:
+	string_scanf(&sscanf_driver, argv[argc-1]);
+	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = SPI_STATE_RX_DATA_PARAM_SUCCESS;
+	}
+	return CORE_RUNNING;
+SPI_STATE_RX_DATA_PARAM_SUCCESS:
+	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
+	}else{
+		Shell_Task.RxLen = sscanf_driver.Register.R0_Result;
+		if( Shell_Task.RxLen > 16){
+			Shell_Task.RxLen = 16;
+		}
+		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_ECHO_HEAD;
+		Shell_Task.Register.R6_Count = 0;
+	}
+	return CORE_RUNNING;
+SPI_STATE_TX_DATA_ECHO:
+	if( Shell_Task.Register.R6_Count < Shell_Task.TxLen){
+		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_ECHO_START;
+	}else{
+		Shell_Task.Register.R15_PC = SPI_STATE_WRITE_READ_DEVICE;
+	}
+	return CORE_RUNNING;
+SPI_STATE_TX_DATA_ECHO_HEAD:
+	string_printf(&fmt_driver, "\r\n\r\n## SPI Bus = %d, Dev = %d, Tx Length = %d, Rx Length = %d\r\n## Tx Data : ",Shell_Task.Register.Bus,Shell_Task.Register.Device, Shell_Task.TxLen, Shell_Task.RxLen);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = SPI_STATE_TX_DATA_ECHO;
+		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+SPI_STATE_TX_DATA_ECHO_START:
+	string_printf(&fmt_driver, "0x%2x ",Shell_Task.TxBuf[Shell_Task.Register.R6_Count]);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = SPI_STATE_TX_DATA_ECHO;
+		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
+		Shell_Task.Register.R6_Count++;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+SPI_STATE_DATA_ECHO_QUEUE:	
+	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+		Shell_Task.Register.R1_Index++;
+	}else{
+		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
+	}
+	return CORE_RUNNING;
+SPI_STATE_WRITE_READ_DEVICE:
+	SPIx_WriteThenRead( Shell_Task.Register.Bus,Shell_Task.TxBuf,Shell_Task.TxLen, Shell_Task.RxBuf,Shell_Task.RxLen);
+	Shell_Task.Register.R15_PC = SPI_STATE_WRITE_READ_DEVICE_WAIT;
+	return CORE_RUNNING;
+SPI_STATE_WRITE_READ_DEVICE_WAIT:
+	if( SPIx_Endp(Shell_Task.Register.Bus) == CORE_DONE){
+		Shell_Task.Register.R15_PC = SPI_STATE_RX_DATA_ECHO_HEAD;
+		Shell_Task.Register.R6_Count = 0;
+	}
+	return CORE_RUNNING;
+SPI_STATE_ECHO_READ_DATA:
+	if( Shell_Task.Register.R6_Count < Shell_Task.RxLen){
+		Shell_Task.Register.R15_PC = SPI_STATE_ECHO_READ_DATA_START;
+	}else{
+		Shell_Task.Register.R15_PC = SPI_STATE_CLOSE_SPI_ENTER;
+	}
+	return CORE_RUNNING;
+SPI_STATE_RX_DATA_ECHO_HEAD:
+	string_printf(&fmt_driver, "\r\n## Rx Data : ");
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = SPI_STATE_ECHO_READ_DATA;
+		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+SPI_STATE_ECHO_READ_DATA_START:
+	string_printf(&fmt_driver, "0x%2x ",Shell_Task.RxBuf[Shell_Task.Register.R6_Count]);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = SPI_STATE_ECHO_READ_DATA;
+		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
+		Shell_Task.Register.R6_Count++;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+SPI_STATE_CLOSE_SPI_ENTER:
+	string_printf(&fmt_driver, "\r\n");
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R14_LR = SPI_STATE_CLOSE_SPI;
+		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+SPI_STATE_CLOSE_SPI:
+	SPIx_Close(Shell_Task.Register.Bus, Shell_Task.Register.Device);
+	Shell_Task.Register.R15_PC = SPI_STATE_ARGC_COMP;
+	return CORE_DONE;
+SPI_STATE_CLOSE_SPI_1:
+	Shell_Task.Register.R15_PC = SPI_STATE_ARGC_COMP;
+	return CORE_DONE;
+SPI_STATE_ERROR_ECHO_QUEUE:
+	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+		Shell_Task.Register.R1_Index++;
+	}else{
+		Shell_Task.Register.R15_PC = SPI_STATE_ARGC_COMP;
+		return CORE_DONE;
+	}
+	return CORE_RUNNING;
+}
 
 
 
@@ -3304,6 +3435,42 @@ GPIOSet_PROC_GROUP10:
 	return CORE_RUNNING;
 }
 
+int do_config(int argc,char *argv[])
+{
+	printf("\r\nhardware spi bus1 pin");
+	printf("\r\n  	SCK  -PA5");
+	printf("\r\n  	MISO -PA6");
+	printf("\r\n  	MOSI -PA7");
+	printf("\r\n  	CS0  -PB0");
+	printf("\r\n  	CS1  -PB1");
+	printf("\r\nBitbang spi bus2 pin");
+	printf("\r\n  	SCK  -PB13");
+	printf("\r\n  	MISO -PB14");
+	printf("\r\n  	MOSI -PB15");
+	printf("\r\n  	CS0  -PB12");
+	printf("\r\n  	CS1  -PA8");
+	printf("\r\nsoftware spi bus3 pin");
+	printf("\r\n  	SCK  -PC14");
+	printf("\r\n  	MISO -PC15");
+	printf("\r\n  	MOSI -PA0");
+	printf("\r\n  	CS0  -PA1");
+	printf("\r\n  	CS1  -PA4");
+	
+	printf("\r\nhardware i2c bus1 pin");
+	printf("\r\n  	SCL  -PB6");
+	printf("\r\n  	SDA  -PB7");
+	printf("\r\nBitbang i2c bus2 pin");
+	printf("\r\n  	SCL  -PB8");
+	printf("\r\n  	SDA  -PB9");
+	printf("\r\nsoftware i2c bus3 pin");
+	printf("\r\n  	SCL  -PB4");
+	printf("\r\n  	SDA  -PB5");
+	printf("\r\nslave i2c bus4 pin");
+	printf("\r\n  	SCL  -PA15");
+	printf("\r\n  	SDA  -PB3");
+	return CORE_DONE;
+}
+
 
 void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
 {
@@ -3327,22 +3494,22 @@ void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
 	cmd_list_create_node(top,"\r\ntop - cpu memory usage",do_top);
 	cmd_list_linked_list_tail(top,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(i2cdetect,"\r\ni2cdetect - detect i2c dev",do_i2cdetect);
+	cmd_list_create_node(i2cdetect,"\r\ni2cdetect - +bus",do_i2cdetect);
 	cmd_list_linked_list_tail(i2cdetect,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(i2cdump,"\r\ni2cdump - dump i2c dev",do_i2cdump);
+	cmd_list_create_node(i2cdump,"\r\ni2cdump - +bus +addr",do_i2cdump);
 	cmd_list_linked_list_tail(i2cdump,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(i2cget,"\r\ni2cget - dev reg length",do_i2cget);
+	cmd_list_create_node(i2cget,"\r\ni2cget - +bus +addr +reg +reg_length +read_length",do_i2cget);
 	cmd_list_linked_list_tail(i2cget,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(i2cset,"\r\ni2cset - dev reg value",do_i2cset);
+	cmd_list_create_node(i2cset,"\r\ni2cset - +bus +addr +dev +reg_length +reg_value",do_i2cset);
 	cmd_list_linked_list_tail(i2cset,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(i2cwrite,"\r\ni2cwrite - dev value n",do_i2cwrite);
+	cmd_list_create_node(i2cwrite,"\r\ni2cwrite - +bus +addr +value *n",do_i2cwrite);
 	cmd_list_linked_list_tail(i2cwrite,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(i2cread,"\r\ni2cread - dev value n",do_i2cread);
+	cmd_list_create_node(i2cread,"\r\ni2cread - +bus +addr +value *n",do_i2cread);
 	cmd_list_linked_list_tail(i2cread,Shell_Device->Shell_List_Header);
 	
 	cmd_list_create_node(reboot,"\r\nreboot - soft reboot",do_reboot);
@@ -3351,8 +3518,8 @@ void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
 	cmd_list_create_node(adc,"\r\nadc - PB0 PB1 Volt",do_adc);
 	cmd_list_linked_list_tail(adc,Shell_Device->Shell_List_Header);
 	
-//	cmd_list_create_node(spi,"\r\nspi - bus dev tx buf*n rx_length",do_spi);
-//	cmd_list_linked_list_tail(spi,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(spi,"\r\nspi - +bus +cs tx buf*n rx_length",do_spi);
+	cmd_list_linked_list_tail(spi,Shell_Device->Shell_List_Header);
 	
 	cmd_list_create_node(ymodem,"\r\nymodem 0 irom flash and 1 spi flash and 2 eeprom",do_ymodem);
 	cmd_list_linked_list_tail(ymodem,Shell_Device->Shell_List_Header);
@@ -3383,4 +3550,7 @@ void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
 	
 	cmd_list_create_node(GPIOset,"\r\nGPIOset - Get GPIO Pin state",do_GPIOset);
 	cmd_list_linked_list_tail(GPIOset,Shell_Device->Shell_List_Header);
+	
+	cmd_list_create_node(config,"\r\nGet - Get GPIO config",do_config);
+	cmd_list_linked_list_tail(config,Shell_Device->Shell_List_Header);
 }

@@ -29,7 +29,9 @@ u32 SPI_FLASH_ReadID(uint8_t Bus, uint8_t CSx)
 	return Temp;
 }
 
-
+uint8_t ret = 0,i,imu_data[12]; 
+uint16_t acc_x,acc_y,acc_z;
+uint16_t gyr_x,gyr_y,gyr_z;
 
 int main(void)
 {	
@@ -46,7 +48,7 @@ int main(void)
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
 	
 	Usart1_Init(115200);//PA9,PA10
-	
+	Led_Device.Init(&Led_Device);
 	I2Cx_Init(I2C1_M_HARDWARE);
 	I2Cx_Init(I2C2_M_BITBANG);
 	I2Cx_Init(I2C3_M_SOFTWARE);
@@ -58,26 +60,31 @@ int main(void)
 	
 	TIM4_Configuration();
 	Shell_Device.Init(&Shell_Device);
-	__IO uint32_t FlashID = 0;
-//****************************************************************************/
 	
-	FlashID = SPI_FLASH_ReadID(SPI3_M_SOFTWARE, 1);	
-	printf("\r\n FlashID is 0x%X\r\n", FlashID);
-	FlashID = SPI_FLASH_ReadID(SPI3_M_SOFTWARE, 1);	
-	printf("\r\n FlashID is 0x%X\r\n", FlashID);
+//	I2Cx_Open(I2C1_M_HARDWARE);
+//	I2Cx_Open(I2C2_M_BITBANG);
+//	I2Cx_Open(I2C3_M_SOFTWARE);
+//	I2Cx_Open(I2C4_S_BITBANG);
+//	
+//	SPIx_Open(SPI1_M_HARDWARE,0);
+//	SPIx_Open(SPI2_M_BITBANG, 0);
+//	SPIx_Open(SPI3_M_SOFTWARE,0);
+	
+	
+	
 	while(1)
 	{
 		Start_CPU();
 		
-//		if( Scheduler(&Led_Device.Timer) == 1)//100us执行一次
-//		{
-//			Led_Device.Driver(&Led_Device);
-//		}
-//		if( Scheduler(&Shell_Device.Timer) == 1)//100us执行一次
-//		{
-//			Shell_Device.Driver(&Shell_Device);
-//			Shell_Device.Put(&Shell_Device);
-//		}
+		if( Scheduler(&Led_Device.Timer) == 1)//100us执行一次
+		{
+			Led_Device.Driver(&Led_Device);
+		}
+		if( Scheduler(&Shell_Device.Timer) == 1)//100us执行一次
+		{
+			Shell_Device.Driver(&Shell_Device);
+			Shell_Device.Put(&Shell_Device);
+		}
 		
 		Stop_CPU(10);
 	}

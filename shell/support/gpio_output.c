@@ -2,7 +2,7 @@
 
 
 
-
+#define GPIO_LOOP_PEROID 20
 
 
 GPIO_Output_Device_t Led_Device = {
@@ -12,7 +12,7 @@ GPIO_Output_Device_t Led_Device = {
 		.LightDarkPeriod = 20,//100us一次，10步，gpio反转一次时间1ms，周期设为10，目的是为了亮度。
 	},
 	.Timer = {
-		.TickPeroid = 10,//10*10等于100us执行一次。
+		.TickPeroid = GPIO_LOOP_PEROID,//10*10等于100us执行一次。
 	},
 	.Init 	= GPIO_Out_Init,
 	.Set  	= GPIO_Out_Set,

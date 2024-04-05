@@ -56,7 +56,7 @@ SPI_M_Bitbang_t SPI2_Master = {
 
 SPI_M_Software_t SPI3_Master = {
 	.SPI_Mode	= SPI_MODE_3,
-	.Delay_time	= 10,
+	.Delay_time	= 1,
 	.Lock 		= CORE_UNLOCK,
 	.PORT_SCK  	= GPIOC,
 	.PIN_SCK   	= GPIO_Pin_14,
@@ -123,7 +123,7 @@ uint8_t SPIx_Open(uint8_t Bus, uint8_t CSx)
 		case SPI1_M_HARDWARE: return SPI1_Master.Open(&SPI1_Master, CSx);
 		case SPI2_M_BITBANG:  return SPI2_Master.Open(&SPI2_Master, CSx);
 		case SPI3_M_SOFTWARE: return SPI3_Master.Open(&SPI3_Master, CSx);
-		default:return CORE_SUCCESS;
+		default:return CORE_ERROR;
 	}
 }
 
@@ -133,7 +133,7 @@ uint8_t SPIx_Endp(uint8_t Bus)
 		case SPI1_M_HARDWARE: return SPI1_Master.Endp(&SPI1_Master);
 		case SPI2_M_BITBANG:  return SPI2_Master.Endp(&SPI2_Master);
 		case SPI3_M_SOFTWARE: return SPI3_Master.Endp(&SPI3_Master);
-		default:return CORE_SUCCESS;
+		default:return CORE_DONE;
 	}
 }
 

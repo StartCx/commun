@@ -7,7 +7,7 @@
 #include "gpio_output.h"
 #include "static_lib.h"
 #include "I2C_Config.h"
-#include "SPI_Bitbang.h"
+#include "SPI_Config.h"
 #include "ymodem.h"
 #include "dht11.h"
 #include "queue.h"
@@ -28,7 +28,6 @@ typedef struct
 	uint8_t Reg_Size;
 	uint8_t Reg_Value[512];
 	uint16_t Value_Length;
-	I2C_M_Bitbang_t *I2C_Driver;
 	GPIO_Output_Device_t *GPIO_Output;
 	KeyDriver_t *KEY;
 	Servo_Output_t *Servo;
@@ -39,7 +38,7 @@ typedef struct
 	uint8_t RxBuf[16];
 	GPIO_TypeDef	*PORT;	//¶Ë¿Ú
 	uint16_t 		PIN;	//Òý½Å
-}Shell_Task_t;
+}Shell_Cmd_Task_t;
 
 
 extern Shell_Device_Class_t Shell_Device;

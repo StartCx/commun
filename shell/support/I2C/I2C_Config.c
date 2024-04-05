@@ -111,7 +111,7 @@ uint8_t I2Cx_Open(uint8_t Bus)
 		case I2C1_M_HARDWARE: return I2C1_Master.Open(&I2C1_Master);
 		case I2C2_M_BITBANG:  return I2C2_Master.Open(&I2C2_Master);
 		case I2C3_M_SOFTWARE: return I2C3_Master.Open(&I2C3_Master);
-		default:return CORE_SUCCESS;
+		default:return CORE_ERROR;
 	}
 }
 
@@ -121,7 +121,7 @@ uint8_t I2Cx_Endp(uint8_t Bus)
 		case I2C1_M_HARDWARE: return I2C1_Master.Endp(&I2C1_Master);
 		case I2C2_M_BITBANG:  return I2C2_Master.Endp(&I2C2_Master);
 		case I2C3_M_SOFTWARE: return I2C3_Master.Endp(&I2C3_Master);
-		default:return CORE_SUCCESS;
+		default:return CORE_DONE;
 	}
 }
 
