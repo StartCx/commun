@@ -35,7 +35,32 @@ static void SPI_M_Software_Delay(SPI_M_Software_t *SPI_Driver)
 uint8_t SPI_M_Software_WriteRead_Mode0(SPI_M_Software_t *SPI_Driver,uint8_t TxData)
 {
 	SPI_Driver->Rx_Data = 0;
+	if( SPI_Driver->First_Bit == MSB_FIRST){
+		goto MSB_FIRST;
+	}else{
+		goto LSB_FIRST;
+	}
+MSB_FIRST:
 	for( SPI_Driver->Mask=0x80; SPI_Driver->Mask>0; SPI_Driver->Mask>>=1)
+	{
+		if( TxData & SPI_Driver->Mask){ //发送数据
+			GPIO_SET_HIGH(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
+		}else{
+			GPIO_SET_LOW(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
+		}
+		GPIO_SET_HIGH(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 高 上升沿
+		SPI_M_Software_Delay(SPI_Driver);
+		if( GPIO_GET_STATE(SPI_Driver->PORT_MISO, SPI_Driver->PIN_MISO)){
+			SPI_Driver->Rx_Data |= SPI_Driver->Mask;
+		}else{
+			SPI_Driver->Rx_Data &= ~SPI_Driver->Mask;
+		}
+		GPIO_SET_LOW(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+		SPI_M_Software_Delay(SPI_Driver);
+	}
+	return SPI_Driver->Rx_Data;
+LSB_FIRST:	
+	for( SPI_Driver->Mask=0x01; SPI_Driver->Mask<=0x80; SPI_Driver->Mask<<=1)
 	{
 		if( TxData & SPI_Driver->Mask){ //发送数据
 			GPIO_SET_HIGH(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
@@ -59,7 +84,32 @@ uint8_t SPI_M_Software_WriteRead_Mode0(SPI_M_Software_t *SPI_Driver,uint8_t TxDa
 uint8_t SPI_M_Software_WriteRead_Mode1(SPI_M_Software_t *SPI_Driver,uint8_t TxData)
 {
 	SPI_Driver->Rx_Data = 0;
+	if( SPI_Driver->First_Bit == MSB_FIRST){
+		goto MSB_FIRST;
+	}else{
+		goto LSB_FIRST;
+	}
+MSB_FIRST:
 	for( SPI_Driver->Mask=0x80; SPI_Driver->Mask>0; SPI_Driver->Mask>>=1)
+	{
+		GPIO_SET_HIGH(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 高 上升沿
+		if( TxData & SPI_Driver->Mask){ //发送数据
+			GPIO_SET_HIGH(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
+		}else{
+			GPIO_SET_LOW(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
+		}
+		SPI_M_Software_Delay(SPI_Driver);
+		GPIO_SET_LOW(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
+		if( GPIO_GET_STATE(SPI_Driver->PORT_MISO, SPI_Driver->PIN_MISO)){
+			SPI_Driver->Rx_Data |= SPI_Driver->Mask;
+		}else{
+			SPI_Driver->Rx_Data &= ~SPI_Driver->Mask;
+		}
+		SPI_M_Software_Delay(SPI_Driver);
+	}
+	return SPI_Driver->Rx_Data;
+LSB_FIRST:		
+	for( SPI_Driver->Mask=0x01; SPI_Driver->Mask<=0x80; SPI_Driver->Mask<<=1)
 	{
 		GPIO_SET_HIGH(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 高 上升沿
 		if( TxData & SPI_Driver->Mask){ //发送数据
@@ -83,7 +133,32 @@ uint8_t SPI_M_Software_WriteRead_Mode1(SPI_M_Software_t *SPI_Driver,uint8_t TxDa
 uint8_t SPI_M_Software_WriteRead_Mode2(SPI_M_Software_t *SPI_Driver,uint8_t TxData)
 {
 	SPI_Driver->Rx_Data = 0;
+	if( SPI_Driver->First_Bit == MSB_FIRST){
+		goto MSB_FIRST;
+	}else{
+		goto LSB_FIRST;
+	}
+MSB_FIRST:
 	for( SPI_Driver->Mask=0x80; SPI_Driver->Mask>0; SPI_Driver->Mask>>=1)
+	{
+		if( TxData & SPI_Driver->Mask){ //发送数据
+			GPIO_SET_HIGH(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
+		}else{
+			GPIO_SET_LOW(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
+		}
+		GPIO_SET_LOW(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 低
+		SPI_M_Software_Delay(SPI_Driver);
+		if( GPIO_GET_STATE(SPI_Driver->PORT_MISO, SPI_Driver->PIN_MISO)){
+			SPI_Driver->Rx_Data |= SPI_Driver->Mask;
+		}else{
+			SPI_Driver->Rx_Data &= ~SPI_Driver->Mask;
+		}
+		GPIO_SET_HIGH(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 高
+		SPI_M_Software_Delay(SPI_Driver);		
+	}
+	return SPI_Driver->Rx_Data;
+LSB_FIRST:		
+	for( SPI_Driver->Mask=0x01; SPI_Driver->Mask<=0x80; SPI_Driver->Mask<<=1)
 	{
 		if( TxData & SPI_Driver->Mask){ //发送数据
 			GPIO_SET_HIGH(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
@@ -107,7 +182,32 @@ uint8_t SPI_M_Software_WriteRead_Mode2(SPI_M_Software_t *SPI_Driver,uint8_t TxDa
 uint8_t SPI_M_Software_WriteRead_Mode3(SPI_M_Software_t *SPI_Driver,uint8_t TxData)
 {
 	SPI_Driver->Rx_Data = 0;
+	if( SPI_Driver->First_Bit == MSB_FIRST){
+		goto MSB_FIRST;
+	}else{
+		goto LSB_FIRST;
+	}
+MSB_FIRST:
 	for( SPI_Driver->Mask=0x80; SPI_Driver->Mask>0; SPI_Driver->Mask>>=1)
+	{
+		GPIO_SET_LOW(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 低
+		if( TxData & SPI_Driver->Mask){ //发送数据
+			GPIO_SET_HIGH(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
+		}else{
+			GPIO_SET_LOW(SPI_Driver->PORT_MOSI,  SPI_Driver->PIN_MOSI);
+		}
+		SPI_M_Software_Delay(SPI_Driver);
+		GPIO_SET_HIGH(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 高   
+		if( GPIO_GET_STATE(SPI_Driver->PORT_MISO, SPI_Driver->PIN_MISO)){
+			SPI_Driver->Rx_Data |= SPI_Driver->Mask;
+		}else{
+			SPI_Driver->Rx_Data &= ~SPI_Driver->Mask;
+		}
+		SPI_M_Software_Delay(SPI_Driver);
+	}
+	return SPI_Driver->Rx_Data;
+LSB_FIRST:		
+	for( SPI_Driver->Mask=0x01; SPI_Driver->Mask<=0x80; SPI_Driver->Mask<<=1)
 	{
 		GPIO_SET_LOW(SPI_Driver->PORT_SCK,  SPI_Driver->PIN_SCK);//时钟 - 低
 		if( TxData & SPI_Driver->Mask){ //发送数据

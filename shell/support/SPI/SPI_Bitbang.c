@@ -203,7 +203,11 @@ SPI_DRIVER_WRITE_THEN_READ1:
 	return;
 SPI_DRIVER_MODE_PARAM_INIT:
 	SPI_Driver->Register.R1_Index = 0;
-	SPI_Driver->Register.R10_Mask = 0x80;
+	if( SPI_Driver->First_Bit == MSB_FIRST){
+		SPI_Driver->Register.R10_Mask = 0x01;
+	}else{
+		SPI_Driver->Register.R10_Mask = 0x80;
+	}
 	SPI_Driver->Register.R15_PC = SPI_DRIVER_TX_DATA_SET;
 	return;
 SPI_DRIVER_TX_DATA_SET:
@@ -293,11 +297,20 @@ SPI_DRIVER_LOOP_RX_DATA_MODE3:
 	return;
 /********************************************************************************************************************/
 SPI_DRIVER_MASK_SHIFT:
-	SPI_Driver->Register.R10_Mask >>= 1;
-	if( SPI_Driver->Register.R10_Mask > 0){
-		SPI_Driver->Register.R15_PC = SPI_Driver->Func_Index;
+	if( SPI_Driver->First_Bit == MSB_FIRST){
+		SPI_Driver->Register.R10_Mask >>= 1;
+		if( SPI_Driver->Register.R10_Mask > 0){
+			SPI_Driver->Register.R15_PC = SPI_Driver->Func_Index;
+		}else{
+			SPI_Driver->Register.R15_PC = SPI_DRIVER_RX_DATA_GET;
+		}
 	}else{
-		SPI_Driver->Register.R15_PC = SPI_DRIVER_RX_DATA_GET;
+		SPI_Driver->Register.R10_Mask <<= 1;
+		if( SPI_Driver->Register.R10_Mask <= 0x80){
+			SPI_Driver->Register.R15_PC = SPI_Driver->Func_Index;
+		}else{
+			SPI_Driver->Register.R15_PC = SPI_DRIVER_RX_DATA_GET;
+		}
 	}
 	return;
 SPI_DRIVER_RX_DATA_GET:
@@ -306,7 +319,11 @@ SPI_DRIVER_RX_DATA_GET:
 	}else{
 		SPI_Driver->Register.R2_cin = 0xFF;
 	}
-	SPI_Driver->Register.R10_Mask = 0x80;
+	if( SPI_Driver->First_Bit == MSB_FIRST){
+		SPI_Driver->Register.R10_Mask = 0x01;
+	}else{
+		SPI_Driver->Register.R10_Mask = 0x80;
+	}
 	SPI_Driver->Register.R15_PC = SPI_DRIVER_SIZE_COMPARE;
 	return;
 SPI_DRIVER_SIZE_COMPARE:

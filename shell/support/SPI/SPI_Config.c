@@ -4,6 +4,7 @@
 SPI_M_Hardware_t SPI1_Master = {
 	.SPIx		= SPI1,
 	.SPI_Mode	= SPI_MODE_3,
+	.First_Bit	= MSB_FIRST,
 	.Delay_time	= 100,
 	.Lock 		= CORE_UNLOCK,
 	.PORT_SCK  	= GPIOA,
@@ -29,6 +30,7 @@ SPI_M_Hardware_t SPI1_Master = {
 
 SPI_M_Bitbang_t SPI2_Master = {
 	.SPI_Mode	= SPI_MODE_3,
+	.First_Bit	= MSB_FIRST,
 	.Register.R12_Lock = CORE_UNLOCK,
 	.PORT_SCK  = GPIOB,
 	.PIN_SCK   = GPIO_Pin_13,
@@ -56,6 +58,7 @@ SPI_M_Bitbang_t SPI2_Master = {
 
 SPI_M_Software_t SPI3_Master = {
 	.SPI_Mode	= SPI_MODE_3,
+	.First_Bit	= MSB_FIRST,
 	.Delay_time	= 1,
 	.Lock 		= CORE_UNLOCK,
 	.PORT_SCK  	= GPIOC,

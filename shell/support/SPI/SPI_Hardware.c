@@ -57,13 +57,14 @@ void SPI_M_Hardware_Mode(SPI_M_Hardware_t *SPI_Driver,spi_mode_e spi_mode) {
 			GPIO_SET_LOW(SPI_Driver->PORT_SCK, SPI_Driver->PIN_SCK);//时钟 - 低 下降沿
 			break;
 	}
-	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
-	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
+	SPI_InitStructure.SPI_Direction 		= SPI_Direction_2Lines_FullDuplex;
+	SPI_InitStructure.SPI_Mode 				= SPI_Mode_Master;
+	SPI_InitStructure.SPI_DataSize 			= SPI_DataSize_8b;
+	SPI_InitStructure.SPI_NSS 				= SPI_NSS_Soft;
+	SPI_InitStructure.SPI_FirstBit 			= SPI_Driver->First_Bit;
 	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
-	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
-	SPI_InitStructure.SPI_CRCPolynomial = 7;
+	SPI_InitStructure.SPI_FirstBit 			= SPI_FirstBit_MSB;
+	SPI_InitStructure.SPI_CRCPolynomial 	= 7;
 	SPI_Init(SPI_Driver->SPIx , &SPI_InitStructure);
     SPI_Cmd(SPI_Driver->SPIx, ENABLE); // 重新使能SPI1
 }
