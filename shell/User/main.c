@@ -7,31 +7,7 @@
 #include "SPI_Config.h"
 #include "core.h"
 
-uint32_t Temp = 0;
-uint8_t buf[5];
 
-u32 SPI_FLASH_ReadID(uint8_t Bus, uint8_t CSx)
-{
-	
-	uint8_t Write_Data = 0;
-	/* 开始通讯：CS低电平 */
-	SPIx_Open(Bus, CSx);
-
-	/* 发送JEDEC指令，读取ID */
-	Write_Data = 0x9F;
-	SPIx_WriteThenRead(Bus,&Write_Data,1,buf,3);
-	/* 停止通讯：CS高电平 */
-	while( SPIx_Endp(Bus) != CORE_DONE);
-	
-	/*把数据组合起来，作为函数的返回值*/
-	Temp = (buf[0] << 16) | (buf[1] << 8) | buf[2];
-	SPIx_Close(Bus, CSx);
-	return Temp;
-}
-
-uint8_t ret = 0,i,imu_data[12]; 
-uint16_t acc_x,acc_y,acc_z;
-uint16_t gyr_x,gyr_y,gyr_z;
 
 int main(void)
 {	
@@ -60,16 +36,6 @@ int main(void)
 	
 	TIM4_Configuration();
 	Shell_Device.Init(&Shell_Device);
-	
-//	I2Cx_Open(I2C1_M_HARDWARE);
-//	I2Cx_Open(I2C2_M_BITBANG);
-//	I2Cx_Open(I2C3_M_SOFTWARE);
-//	I2Cx_Open(I2C4_S_BITBANG);
-//	
-//	SPIx_Open(SPI1_M_HARDWARE,0);
-//	SPIx_Open(SPI2_M_BITBANG, 0);
-//	SPIx_Open(SPI3_M_SOFTWARE,0);
-	
 	
 	
 	while(1)
