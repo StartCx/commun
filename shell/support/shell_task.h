@@ -3,6 +3,7 @@
 
 
 #include "core.h"
+#include "can.h"
 #include "shell_driver.h"
 #include "gpio_output.h"
 #include "static_lib.h"
@@ -18,6 +19,10 @@
 #include "servo_output.h"
 #include "DS18B20.h"
 #include "simulated_pwm.h"
+#include "w25qx.h"
+#include "at24cxx.h"
+#include "oled.h"
+
 
 typedef struct
 {

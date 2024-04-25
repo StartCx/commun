@@ -6,6 +6,7 @@
 #include "stm32f10x_flash.h"
 #include "stm32f10x_adc.h"
 #include "stm32f10x_i2c.h"
+#include "stm32f10x_can.h"
 #include "usart.h"
 #include "adc.h"
 

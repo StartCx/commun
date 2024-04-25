@@ -25,6 +25,8 @@
 
 
 void Usart1_Init(u32 bound);
+void Usart2_Init(u32 bound);
+
 void Usart_SendByte( USART_TypeDef * pUSARTx, uint8_t ch);
 void Usart_SendString( USART_TypeDef * pUSARTx, char *str);
 

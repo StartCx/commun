@@ -808,6 +808,9 @@ ITStatus CAN_GetITStatus(CAN_TypeDef* CANx, uint32_t CAN_IT)
   assert_param(IS_CAN_ITStatus(CAN_IT));
   switch (CAN_IT)
   {
+	 case CAN_IT_FMP0:
+	  pendingbitstatus = CheckITStatus(CANx->RF0R, CAN_RF0R_FMP0);
+	  break;
     case CAN_IT_RQCP0:
       pendingbitstatus = CheckITStatus(CANx->TSR, TSR_RQCP0);
       break;

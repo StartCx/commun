@@ -45,7 +45,7 @@ void Stop_CPU(uint32_t Time)
 	if( Cur_Usage_Cpu > Cur_Usage_Max_Cpu){
 		Cur_Usage_Max_Cpu = Cur_Usage_Cpu;
 	}
-	while(CPUTickCount < Time);
+//	while(CPUTickCount < Time);
 }
 
 
@@ -63,4 +63,3 @@ void GPIO_ToggleBit(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
 	  GPIO_SET_HIGH(GPIOx, GPIO_Pin);
   }
 }
-

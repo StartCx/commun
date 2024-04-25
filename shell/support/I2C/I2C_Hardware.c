@@ -5,9 +5,25 @@
 /*******************************************************************************************************************************/
 
 void I2C_M_Hardware_Config(I2C_M_Hardware_t *I2C_Driver)
-{
+{	
 	GPIO_InitTypeDef GPIO_InitStructure;
-	I2C_InitTypeDef  I2C_InitStructure;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;  	/* 开漏输出 */
+	
+	GPIO_InitStructure.GPIO_Pin = I2C_Driver->PIN_SCL;
+	GPIO_Init(I2C_Driver->PORT_SCL, &GPIO_InitStructure);
+	
+	GPIO_InitStructure.GPIO_Pin = I2C_Driver->PIN_SDA;
+	GPIO_Init(I2C_Driver->PORT_SDA, &GPIO_InitStructure);
+	
+	GPIO_SET_LOW(I2C_Driver->PORT_SDA, I2C_Driver->PIN_SDA);
+	GPIO_SET_LOW(I2C_Driver->PORT_SCL, I2C_Driver->PIN_SCL);
+	GPIO_SET_LOW(I2C_Driver->PORT_SDA, I2C_Driver->PIN_SDA);
+	GPIO_SET_HIGH(I2C_Driver->PORT_SCL, I2C_Driver->PIN_SCL);
+	GPIO_SET_HIGH(I2C_Driver->PORT_SDA, I2C_Driver->PIN_SDA);
+	GPIO_SET_HIGH(I2C_Driver->PORT_SCL, I2C_Driver->PIN_SCL);
+	
+	I2C_InitTypeDef I2C_InitStructure;
 	I2C_DeInit(I2C_Driver->I2Cx);
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;  	/* 开漏输出 */
@@ -27,7 +43,7 @@ void I2C_M_Hardware_Config(I2C_M_Hardware_t *I2C_Driver)
 	I2C_Cmd(I2C_Driver->I2Cx, ENABLE);
 	I2C_Driver->I2Cx->CR1 = 0x401;
 	I2C_Driver->I2Cx->SR1 = 0x00;
-	
+	I2C_Driver->I2Cx->SR2 = 0x00;
 }
 
 
@@ -58,7 +74,13 @@ uint8_t I2C_M_Hardware_Result(I2C_M_Hardware_t *I2C_Driver)
 
 void I2C_M_Hardware_Set(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint16_t Reg_Addr, uint8_t Reg_Size, uint8_t *pData, uint16_t Size)
 {
-	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF)){
+	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_AF) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_ARLO) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF) || 
+		I2C_Driver->I2Cx->CR1 == 0x0701						||
+		I2C_Driver->I2Cx->SR2 == 0x02){
 		I2C_M_Hardware_Config(I2C_Driver);
 	}
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
@@ -127,7 +149,13 @@ ERROR:
 
 void I2C_M_Hardware_Get(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint16_t Reg_Addr,uint8_t Reg_Size, uint8_t *pData, uint16_t Size) 
 {
-	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF)){
+	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_AF) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_ARLO) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF) || 
+		I2C_Driver->I2Cx->CR1 == 0x0701						||
+		I2C_Driver->I2Cx->SR2 == 0x02){
 		I2C_M_Hardware_Config(I2C_Driver);
 	}
 	
@@ -218,7 +246,13 @@ ERROR:
 
 void I2C_M_Hardware_Write(I2C_M_Hardware_t *I2C_Driver,uint8_t Dev_Addr, uint8_t *pData, uint16_t Size)
 {
-	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF)){
+	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_AF) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_ARLO) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF) || 
+		I2C_Driver->I2Cx->CR1 == 0x0701						||
+		I2C_Driver->I2Cx->SR2 == 0x02){
 		I2C_M_Hardware_Config(I2C_Driver);
 	}
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
@@ -265,7 +299,13 @@ ERROR:
 
 void I2C_M_Hardware_Read(I2C_M_Hardware_t *I2C_Driver, uint8_t Dev_Addr, uint8_t *pData, uint16_t Size) 
 {	
-	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF)){
+	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_AF) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_ARLO) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF) || 
+		I2C_Driver->I2Cx->CR1 == 0x0701						||
+		I2C_Driver->I2Cx->SR2 == 0x02){
 		I2C_M_Hardware_Config(I2C_Driver);
 	}
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;
@@ -319,7 +359,13 @@ ERROR:
 
 void I2C_M_Hardware_Detect(I2C_M_Hardware_t *I2C_Driver, uint8_t _Address)
 {
-	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) || I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF)){
+	if( I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BUSY) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_AF) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_ARLO) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_BERR) 	|| 
+		I2C_GetFlagStatus(I2C_Driver->I2Cx, I2C_FLAG_STOPF) || 
+		I2C_Driver->I2Cx->CR1 == 0x0701						||
+		I2C_Driver->I2Cx->SR2 == 0x02){
 		I2C_M_Hardware_Config(I2C_Driver);
 	}
 	I2C_Driver->Delay_cnt = I2C_Driver->Delay_time;

@@ -3,7 +3,7 @@
 
 
 #include "core.h"
-#include "simulated_i2c.h"
+#include "I2C_Config.h"
 
 
 enum
@@ -22,6 +22,7 @@ enum
 
 typedef struct EEPROM_Driver_t
 {
+	unsigned char  BUS;
 	unsigned char  ID;
 	unsigned char  OWN_ADDR;
 	unsigned short PAGE_BYTE;
@@ -35,9 +36,7 @@ typedef struct EEPROM_Driver_t
 	unsigned char *pDat;
 	CPU_RegisterClass_t Write_Driver;
 	CPU_RegisterClass_t Read_Driver;
-	I2C_Driver_t *I2C_Driver;
-	
-	void (*Init)(struct EEPROM_Driver_t *EEPROM_Driver);
+
 	void (*Test)(struct EEPROM_Driver_t *EEPROM_Driver);
 	uint8_t (*Read)( struct EEPROM_Driver_t *EEPROM_Driver, unsigned short address,unsigned char *pDat, unsigned short num);
 	uint8_t (*Write)(struct EEPROM_Driver_t *EEPROM_Driver, unsigned short address,unsigned char *pDat, unsigned short num);
@@ -48,7 +47,6 @@ extern EEPROM_Driver_t EEPROM_Driver;
 extern void AT24CXX_test(EEPROM_Driver_t *EEPROM_Driver);
 extern uint8_t EEPROM_PageWrite(EEPROM_Driver_t *EEPROM_Driver, unsigned short address,unsigned char *pDat, unsigned short num);
 extern uint8_t EEPROM_Read(EEPROM_Driver_t *EEPROM_Driver, unsigned short address,unsigned char *pDat, unsigned short num);
-extern void EEPROM_Driver_Init(EEPROM_Driver_t *EEPROM_Driver);
 extern void EEPROM_ymodem_write(uint32_t addr, uint8_t *buffer, uint32_t length);
 
 #endif

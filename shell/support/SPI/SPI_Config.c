@@ -3,7 +3,7 @@
 
 SPI_M_Hardware_t SPI1_Master = {
 	.SPIx		= SPI1,
-	.SPI_Mode	= SPI_MODE_3,
+	.SPI_Mode	= SPI_MODE_0,
 	.First_Bit	= MSB_FIRST,
 	.Delay_time	= 100,
 	.Lock 		= CORE_UNLOCK,
@@ -29,7 +29,7 @@ SPI_M_Hardware_t SPI1_Master = {
 
 
 SPI_M_Bitbang_t SPI2_Master = {
-	.SPI_Mode	= SPI_MODE_3,
+	.SPI_Mode	= SPI_MODE_0,
 	.First_Bit	= MSB_FIRST,
 	.Register.R12_Lock = CORE_UNLOCK,
 	.PORT_SCK  = GPIOB,
@@ -57,7 +57,7 @@ SPI_M_Bitbang_t SPI2_Master = {
 
 
 SPI_M_Software_t SPI3_Master = {
-	.SPI_Mode	= SPI_MODE_3,
+	.SPI_Mode	= SPI_MODE_0,
 	.First_Bit	= MSB_FIRST,
 	.Delay_time	= 1,
 	.Lock 		= CORE_UNLOCK,
@@ -66,11 +66,11 @@ SPI_M_Software_t SPI3_Master = {
 	.PORT_MISO 	= GPIOC,
 	.PIN_MISO  	= GPIO_Pin_15,
 	.PORT_MOSI 	= GPIOA,
-	.PIN_MOSI  	= GPIO_Pin_0,
-	.PORT_CS[0] = GPIOA,
-	.PIN_CS[0]  = GPIO_Pin_1,
+	.PIN_MOSI  	= GPIO_Pin_4,
+	.PORT_CS[0] = GPIOB,
+	.PIN_CS[0]  = GPIO_Pin_3,
 	.PORT_CS[1] = GPIOA,
-	.PIN_CS[1]  = GPIO_Pin_4,
+	.PIN_CS[1]  = GPIO_Pin_15,
 	
 	.Init			= SPI_M_Software_Config,
 	.WriteAndRead	= SPI_M_Software_WriteAndRead,

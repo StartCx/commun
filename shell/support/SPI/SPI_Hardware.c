@@ -62,8 +62,7 @@ void SPI_M_Hardware_Mode(SPI_M_Hardware_t *SPI_Driver,spi_mode_e spi_mode) {
 	SPI_InitStructure.SPI_DataSize 			= SPI_DataSize_8b;
 	SPI_InitStructure.SPI_NSS 				= SPI_NSS_Soft;
 	SPI_InitStructure.SPI_FirstBit 			= SPI_Driver->First_Bit;
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
-	SPI_InitStructure.SPI_FirstBit 			= SPI_FirstBit_MSB;
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
 	SPI_InitStructure.SPI_CRCPolynomial 	= 7;
 	SPI_Init(SPI_Driver->SPIx , &SPI_InitStructure);
     SPI_Cmd(SPI_Driver->SPIx, ENABLE); // 重新使能SPI1
@@ -100,7 +99,7 @@ void SPI_M_Hardware_Config(SPI_M_Hardware_t *SPI_Driver)
 
 /**************************************************************************************************************/
 uint8_t SPI_M_Hardware_WriteRead(SPI_M_Hardware_t *SPI_Driver,uint8_t TxData)
-{	
+{
 	SPI_Driver->Delay_cnt = SPI_Driver->Delay_time;
 	while( SPI_I2S_GetFlagStatus(SPI_Driver->SPIx , SPI_I2S_FLAG_TXE) == RESET){
 		if((SPI_Driver->Delay_cnt--) == 0) break;

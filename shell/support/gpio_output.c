@@ -9,7 +9,7 @@ GPIO_Output_Device_t Led_Device = {
 	.Attribute = {
 		.GPIOx  	= GPIOC,
 		.GPIO_Pin 	= GPIO_Pin_13,
-		.LightDarkPeriod = 20,//100us一次，10步，gpio反转一次时间1ms，周期设为10，目的是为了亮度。
+		.LightDarkPeriod = 10,//100us一次，10步，gpio反转一次时间1ms，周期设为10，目的是为了亮度。
 	},
 	.Timer = {
 		.TickPeroid = GPIO_LOOP_PEROID,//10*10等于100us执行一次。
@@ -20,7 +20,7 @@ GPIO_Output_Device_t Led_Device = {
 	.Quit	= GPIO_Out_Quit,
 };
 
-#define GPIO_PIN_HIGH 1
+#define GPIO_PIN_HIGH 10
 #define GPIO_PIN_LOW 0
 
 
@@ -29,9 +29,9 @@ GPIO_Output_Device_t Led_Device = {
 
 //1等于10ms
 const unsigned short GPIO_LOW_STATE[] = 	{GPIO_PIN_LOW , 10, GPIO_EFFECT_END};//10等于100ms
-const unsigned short GPIO_HIGH_STATE[]= 	{20, 10, GPIO_EFFECT_END};
-const unsigned short GPIO_HPD_STATE[] = 	{20,2000, GPIO_PIN_LOW,20,GPIO_EFFECT_END};
-const unsigned short GPIO_TOGGLE_STATE[] = 	{0, 700,1,700,0,700,5,700,GPIO_EFFECT_AGN,8};
+const unsigned short GPIO_HIGH_STATE[]= 	{GPIO_PIN_HIGH, 10, GPIO_EFFECT_END};
+const unsigned short GPIO_HPD_STATE[] = 	{GPIO_PIN_HIGH,2000, GPIO_PIN_LOW,20,GPIO_EFFECT_END};
+const unsigned short GPIO_TOGGLE_STATE[] = 	{GPIO_PIN_LOW, 500,1,500,GPIO_PIN_LOW,500,5,500,GPIO_EFFECT_AGN,8};
 
 const unsigned short *gpio_mode[] ={
 	[GPIO_LOW] 		= GPIO_LOW_STATE,

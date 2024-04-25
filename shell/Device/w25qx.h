@@ -2,7 +2,7 @@
 #define _W25Qx_H
 
 #include "core.h"
-#include "simulated_spi.h"
+#include "SPI_Config.h"
 
 
 typedef enum
@@ -47,6 +47,7 @@ typedef enum
 typedef struct W25qx_Driver_t
 {
 	uint8_t ret;
+	uint8_t Bus;
 	uint8_t BUS_ID;
 	W25QXX_ID_t DEV_ID;
 	uint16_t BlockCount;
@@ -76,11 +77,11 @@ typedef struct W25qx_Driver_t
 	uint16_t secremain;	   
  	uint16_t i;   
 /*********************************************************/	
-	SPI_Driver_t *SPI_Driver;
 	uint8_t Cmdbuf[4];
 	uint8_t buf[4096];
 	void (*Init)(struct W25qx_Driver_t *W25qx_Driver);
 	void (*Test)(struct W25qx_Driver_t *W25qx_Driver);
+	void (*Reset)(struct W25qx_Driver_t *W25qx_Driver);
 	uint8_t (*Read)( struct W25qx_Driver_t *W25qx_Driver, uint8_t* pBuffer, uint32_t ReadAddr, uint16_t NumByteToRead);
 	uint8_t (*Write)(struct W25qx_Driver_t *W25qx_Driver, uint8_t* pBuffer, uint32_t WriteAddr,uint16_t NumByteToWrite);
 	uint8_t (*NoCheckWrite)(struct W25qx_Driver_t *W25qx_Driver, uint8_t* pBuffer, uint32_t WriteAddr,uint16_t NumByteToWrite);
@@ -91,6 +92,7 @@ typedef struct W25qx_Driver_t
 extern W25qx_Driver_t W25qx;
 
 void W25QXX_Init(W25qx_Driver_t *W25qx_Driver);
+void w25qxx_driver_pc_reset(W25qx_Driver_t *W25qx_Driver);
 uint8_t W25QXX_Read(W25qx_Driver_t *W25qx_Driver, uint8_t* pBuffer, uint32_t ReadAddr, uint16_t NumByteToRead) ;
 uint8_t W25QXX_Write(W25qx_Driver_t *W25qx_Driver,uint8_t* pBuffer,uint32_t WriteAddr,uint16_t NumByteToWrite) ;
 uint8_t W25QXX_Write_NoCheck(W25qx_Driver_t *W25qx_Driver, uint8_t* pBuffer,uint32_t WriteAddr,uint16_t NumByteToWrite);
@@ -100,7 +102,6 @@ void w25qxx_test(W25qx_Driver_t *W25qx_Driver);
 
 void w25qxx_ymodem_write(uint32_t addr, uint8_t *buffer, uint32_t length);
 void w25qxx_ymodem_erase(uint32_t addr, uint32_t ByteLen);
-void w25qxx_driver_pc_reset(W25qx_Driver_t *W25qx_Driver);
 
 
 #endif

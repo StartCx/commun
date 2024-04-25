@@ -1,13 +1,16 @@
 #include "w25qx.h"
 
 W25qx_Driver_t W25qx = {
+	.Bus			= SPI3_M_SOFTWARE,
+	.BUS_ID			= 0,
 	.DEV_ID			= W25Q64,
-	.Init   		= W25QXX_Init,
+	.ret 			= CORE_SUCCESS,
 	.Read   		= W25QXX_Read,
 	.Write  		= W25QXX_Write,
 	.NoCheckWrite 	= W25QXX_Write_NoCheck,
 	.Erase_Sector  	= W25QXX_Erase_Sector,
-	.Erase_Block    = W25QXX_Erase_Block,
+	.Erase_Block	= W25QXX_Erase_Block,
+	.Reset			= w25qxx_driver_pc_reset,
 };
 
 
@@ -64,7 +67,7 @@ W25QXX_READ_GET_PARAM:
 	W25qx_Driver->Read_PC = W25QXX_READ_SET_OPEN_BUS;
 	return CORE_RUNNING;
 W25QXX_READ_SET_OPEN_BUS:
-	if( W25qx_Driver->SPI_Driver->open(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
+	if( SPIx_Open(W25qx_Driver->Bus,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
 		W25qx_Driver->Read_PC = W25QXX_READ_SET_WR_DATA;
 	}
 	return CORE_RUNNING;
@@ -73,14 +76,14 @@ W25QXX_READ_SET_WR_DATA:
 	W25qx_Driver->Cmdbuf[1] = (uint8_t)((ReadAddr)>>16);
 	W25qx_Driver->Cmdbuf[2] = (uint8_t)((ReadAddr)>>8);
 	W25qx_Driver->Cmdbuf[3] = (uint8_t)ReadAddr;
-	W25qx_Driver->SPI_Driver->write_then_read(W25qx_Driver->SPI_Driver,W25qx_Driver->Cmdbuf, 4, pBuffer, NumByteToRead);
+	SPIx_WriteThenRead(W25qx_Driver->Bus,W25qx_Driver->Cmdbuf, 4, pBuffer, NumByteToRead);
 	W25qx_Driver->Read_PC = W25QXX_READ_WAIT_DONE;
 	return CORE_RUNNING;
 W25QXX_READ_WAIT_DONE:
-	if( W25qx_Driver->SPI_Driver->endp(W25qx_Driver->SPI_Driver) != CORE_DONE){
+	if( SPIx_Endp(W25qx_Driver->Bus) != CORE_DONE){
 		return CORE_RUNNING;
 	}
-	W25qx_Driver->SPI_Driver->close(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID); 	 
+	SPIx_Close(W25qx_Driver->Bus,W25qx_Driver->BUS_ID); 	 
 	W25qx_Driver->Read_PC = W25QXX_READ_GET_PARAM;
 	return CORE_DONE;
 }  
@@ -107,39 +110,33 @@ uint8_t W25QXX_Wait_Busy(W25qx_Driver_t *W25qx_Driver)
 	};
 	goto *function[W25qx_Driver->Busy_PC];
 W25QXX_BUSY_SET_OPEN_BUS:
-	if( W25qx_Driver->SPI_Driver->open(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
+	if( SPIx_Open(W25qx_Driver->Bus,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
 		W25qx_Driver->Busy_PC = W25QXX_BUSY_SET_WR_DATA;
 	}
 	return CORE_RUNNING;
 W25QXX_BUSY_SET_WR_DATA:
 	W25qx_Driver->Cmdbuf[0] = W25X_ReadStatusReg1;
-	W25qx_Driver->SPI_Driver->write_and_read(W25qx_Driver->SPI_Driver,W25qx_Driver->Cmdbuf, NULL, 1);
+	SPIx_WriteAndRead(W25qx_Driver->Bus,W25qx_Driver->Cmdbuf, NULL, 1);
 	W25qx_Driver->Busy_PC = W25QXX_BUSY_WAIT_DONE;
 	return CORE_RUNNING;
 W25QXX_BUSY_WAIT_DONE:
-	if( W25qx_Driver->SPI_Driver->endp(W25qx_Driver->SPI_Driver) == CORE_DONE){
+	if( SPIx_Endp(W25qx_Driver->Bus) == CORE_DONE){
 		W25qx_Driver->Busy_PC = W25QXX_BUSY_WAIT_READ_REG;
-		W25qx_Driver->Busy_TIMEOUT = 3000;
+		W25qx_Driver->Busy_TIMEOUT = 100000;
 	}
 	return CORE_RUNNING;
 W25QXX_BUSY_WAIT_READ_REG:
 	W25qx_Driver->Busy_TIMEOUT--;
-	W25qx_Driver->SPI_Driver->write_and_read(W25qx_Driver->SPI_Driver,NULL, &W25qx_Driver->Cmdbuf[0], 1);
+	SPIx_WriteAndRead(W25qx_Driver->Bus,NULL, &W25qx_Driver->Cmdbuf[0], 1);
 	W25qx_Driver->Busy_PC = W25QXX_BUSY_WAIT_READ_REG_DONE;
 	return CORE_RUNNING;
 W25QXX_BUSY_WAIT_READ_REG_DONE:	
-	if( W25qx_Driver->SPI_Driver->endp(W25qx_Driver->SPI_Driver) != CORE_DONE){
+	if( SPIx_Endp(W25qx_Driver->Bus) != CORE_DONE){
 		return CORE_RUNNING;
 	}
-	if((W25qx_Driver->Cmdbuf[0] & 0x01 ) == 0x00){
-		W25qx_Driver->SPI_Driver->close(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID);
+	if((W25qx_Driver->Cmdbuf[0] & 0x01 ) == 0x00 || W25qx_Driver->Busy_TIMEOUT == 0){
+		SPIx_Close(W25qx_Driver->Bus,W25qx_Driver->BUS_ID);
 		W25qx_Driver->Busy_PC = W25QXX_BUSY_SET_OPEN_BUS;
-		W25qx_Driver->ret = CORE_SUCCESS;
-		return CORE_DONE;
-	}else if(W25qx_Driver->Busy_TIMEOUT == 0){
-		W25qx_Driver->SPI_Driver->close(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID);
-		W25qx_Driver->Busy_PC = W25QXX_BUSY_SET_OPEN_BUS;
-		W25qx_Driver->ret = CORE_ERROR;
 		return CORE_DONE;
 	}else{
 		W25qx_Driver->Busy_PC = W25QXX_BUSY_WAIT_READ_REG;
@@ -166,20 +163,20 @@ uint8_t W25QXX_Write_Enable(W25qx_Driver_t *W25qx_Driver)
 	};
 	goto *function[W25qx_Driver->Enable_PC];
 W25QXX_ENABLE_SET_OPEN_BUS:
-	if( W25qx_Driver->SPI_Driver->open(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
+	if( SPIx_Open(W25qx_Driver->Bus,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
 		W25qx_Driver->Enable_PC = W25QXX_ENABLE_SET_WR_DATA;
 	}
 	return CORE_RUNNING;
 W25QXX_ENABLE_SET_WR_DATA:
 	W25qx_Driver->Cmdbuf[0] = W25X_WriteEnable;
-	W25qx_Driver->SPI_Driver->write_and_read(W25qx_Driver->SPI_Driver,W25qx_Driver->Cmdbuf, NULL, 1);
+	SPIx_WriteAndRead(W25qx_Driver->Bus,W25qx_Driver->Cmdbuf, NULL, 1);
 	W25qx_Driver->Enable_PC = W25QXX_ENABLE_WAIT_DONE;
 	return CORE_RUNNING;
 W25QXX_ENABLE_WAIT_DONE:
-	if( W25qx_Driver->SPI_Driver->endp(W25qx_Driver->SPI_Driver) != CORE_DONE){
+	if( SPIx_Endp(W25qx_Driver->Bus) != CORE_DONE){
 		return CORE_RUNNING;
 	}
-	W25qx_Driver->SPI_Driver->close(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID);
+	SPIx_Close(W25qx_Driver->Bus,W25qx_Driver->BUS_ID);
 	W25qx_Driver->Enable_PC = W25QXX_ENABLE_SET_OPEN_BUS;
 	return CORE_DONE;    
 }
@@ -214,7 +211,7 @@ W25QXX_ERASE_GET_PARAM:
 	}
 	return CORE_RUNNING;
 W25QXX_ERASE_SET_OPEN_BUS:
-	if( W25qx_Driver->SPI_Driver->open(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
+	if( SPIx_Open(W25qx_Driver->Bus,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
 		W25qx_Driver->Erase_PC = W25QXX_ERASE_SET_WR_DATA;
 	}
 	return CORE_RUNNING;
@@ -224,14 +221,14 @@ W25QXX_ERASE_SET_WR_DATA:
 	W25qx_Driver->Cmdbuf[1] = (uint8_t)((Dst_Addr)>>16);
 	W25qx_Driver->Cmdbuf[2] = (uint8_t)((Dst_Addr)>>8);
 	W25qx_Driver->Cmdbuf[3] = (uint8_t)Dst_Addr;
-	W25qx_Driver->SPI_Driver->write_and_read(&SPI_Driver0,W25qx_Driver->Cmdbuf, NULL,4);
+	SPIx_WriteAndRead(W25qx_Driver->Bus,W25qx_Driver->Cmdbuf, NULL,4);
 	W25qx_Driver->Erase_PC = W25QXX_ERASE_WAIT_DONE;
 	return CORE_RUNNING;
 W25QXX_ERASE_WAIT_DONE:
-	if( W25qx_Driver->SPI_Driver->endp(&SPI_Driver0) != CORE_DONE){
+	if( SPIx_Endp(W25qx_Driver->Bus) != CORE_DONE){
 		return CORE_RUNNING;
 	}
-	W25qx_Driver->SPI_Driver->close(&SPI_Driver0,W25qx_Driver->BUS_ID); 
+	SPIx_Close(W25qx_Driver->Bus,W25qx_Driver->BUS_ID); 
 	W25qx_Driver->Erase_PC = W25QXX_ERASE_BUSY_DONE;
 	return CORE_RUNNING;
 W25QXX_ERASE_BUSY_DONE://等待擦除完成
@@ -242,9 +239,7 @@ W25QXX_ERASE_BUSY_DONE://等待擦除完成
 	return CORE_RUNNING;
 } 
 
-//擦除一个扇区
-//Dst_Addr:扇区地址 根据实际容量设置
-//擦除一个扇区的最少时间:150ms
+
 uint8_t W25QXX_Erase_Block(W25qx_Driver_t *W25qx_Driver,uint32_t Dst_Addr)   
 {  
 	enum
@@ -271,7 +266,7 @@ W25QXX_ERASE_Block_GET_PARAM:
 	}
 	return CORE_RUNNING;
 W25QXX_ERASE_Block_SET_OPEN_BUS:
-	if( W25qx_Driver->SPI_Driver->open(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
+	if( SPIx_Open(W25qx_Driver->Bus,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
 		W25qx_Driver->Erase_PC = W25QXX_ERASE_Block_SET_WR_DATA;
 	}
 	return CORE_RUNNING;
@@ -281,14 +276,14 @@ W25QXX_ERASE_Block_SET_WR_DATA:
 	W25qx_Driver->Cmdbuf[1] = (uint8_t)((Dst_Addr)>>16);
 	W25qx_Driver->Cmdbuf[2] = (uint8_t)((Dst_Addr)>>8);
 	W25qx_Driver->Cmdbuf[3] = (uint8_t)Dst_Addr;
-	W25qx_Driver->SPI_Driver->write_and_read(&SPI_Driver0,W25qx_Driver->Cmdbuf, NULL,4);
+	SPIx_WriteAndRead(W25qx_Driver->Bus,W25qx_Driver->Cmdbuf, NULL,4);
 	W25qx_Driver->Erase_PC = W25QXX_ERASE_Block_WAIT_DONE;
 	return CORE_RUNNING;
 W25QXX_ERASE_Block_WAIT_DONE:
-	if( W25qx_Driver->SPI_Driver->endp(&SPI_Driver0) != CORE_DONE){
+	if( SPIx_Endp(W25qx_Driver->Bus) != CORE_DONE){
 		return CORE_RUNNING;
 	}
-	W25qx_Driver->SPI_Driver->close(&SPI_Driver0,W25qx_Driver->BUS_ID); 
+	SPIx_Close(W25qx_Driver->Bus,W25qx_Driver->BUS_ID); 
 	W25qx_Driver->Erase_PC = W25QXX_ERASE_Block_BUSY_DONE;
 	return CORE_RUNNING;
 W25QXX_ERASE_Block_BUSY_DONE://等待擦除完成
@@ -298,6 +293,7 @@ W25QXX_ERASE_Block_BUSY_DONE://等待擦除完成
 	}
 	return CORE_RUNNING;
 } 
+
 //SPI在一页(0~65535)内写入少于256个字节的数据
 //在指定地址开始写入最大256字节的数据
 //pBuffer:数据存储区
@@ -335,7 +331,7 @@ W25QXX_Write_Page_GET_PARAM:
 	}
 	return CORE_RUNNING;
 W25QXX_Write_Page_SET_OPEN_BUS:
-	if( W25qx_Driver->SPI_Driver->open(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
+	if( SPIx_Open(W25qx_Driver->Bus,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
 		W25qx_Driver->Write_Page_PC = W25QXX_Write_Page_SET_WR_ADDR;
 	}
 	return CORE_RUNNING;
@@ -344,21 +340,21 @@ W25QXX_Write_Page_SET_WR_ADDR:
 	W25qx_Driver->Cmdbuf[1] = (uint8_t)((WriteAddr)>>16);
 	W25qx_Driver->Cmdbuf[2] = (uint8_t)((WriteAddr)>>8);
 	W25qx_Driver->Cmdbuf[3] = (uint8_t)WriteAddr;
-	W25qx_Driver->SPI_Driver->write_and_read(W25qx_Driver->SPI_Driver,W25qx_Driver->Cmdbuf, NULL, 4);
+	SPIx_WriteAndRead(W25qx_Driver->Bus,W25qx_Driver->Cmdbuf, NULL, 4);
 	W25qx_Driver->Write_Page_PC = W25QXX_Write_Page_WAIT_ADDR_DONE;
 	return CORE_RUNNING;
 W25QXX_Write_Page_WAIT_ADDR_DONE:
-	if( W25qx_Driver->SPI_Driver->endp(W25qx_Driver->SPI_Driver) == CORE_DONE){
+	if( SPIx_Endp(W25qx_Driver->Bus) == CORE_DONE){
 		W25qx_Driver->Write_Page_PC = W25QXX_Write_Page_SET_WR_DATA;
 	}
 	return CORE_RUNNING;
 W25QXX_Write_Page_SET_WR_DATA:
-	W25qx_Driver->SPI_Driver->write_and_read(W25qx_Driver->SPI_Driver,pBuffer, NULL, NumByteToWrite);
+	SPIx_WriteAndRead(W25qx_Driver->Bus,pBuffer, NULL, NumByteToWrite);
 	W25qx_Driver->Write_Page_PC = W25QXX_Write_Page_WAIT_DATA_DONE;
 	return CORE_RUNNING;
 W25QXX_Write_Page_WAIT_DATA_DONE:	
-	if( W25qx_Driver->SPI_Driver->endp(W25qx_Driver->SPI_Driver) == CORE_DONE){
-		W25qx_Driver->SPI_Driver->close(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID);
+	if( SPIx_Endp(W25qx_Driver->Bus) == CORE_DONE){
+		SPIx_Close(W25qx_Driver->Bus,W25qx_Driver->BUS_ID);
 		W25qx_Driver->Write_Page_PC = W25QXX_Write_Page_BUSY_DONE;
 	}
 	return CORE_RUNNING;
@@ -579,38 +575,31 @@ uint8_t w25qxx_ID_Manufacturer(W25qx_Driver_t *W25qx_Driver)
 	};
 	goto *function[W25qx_Driver->DEV_ID_PC];
 W25QXX_READ_ID_PARAM:
-	if( W25qx_Driver->SPI_Driver->open(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
+	if( SPIx_Open(W25qx_Driver->Bus,W25qx_Driver->BUS_ID) == CORE_SUCCESS){
 		W25qx_Driver->DEV_ID_PC = W25QXX_READ_ID_Page;
 	}
 	return CORE_RUNNING;
 W25QXX_READ_ID_Page:
 	W25qx_Driver->Cmdbuf[0] = W25X_JedecDeviceID;
-	W25qx_Driver->SPI_Driver->write_then_read(W25qx_Driver->SPI_Driver,W25qx_Driver->Cmdbuf, 1, W25qx_Driver->buf, 3);
+	SPIx_WriteThenRead(W25qx_Driver->Bus,W25qx_Driver->Cmdbuf, 1, W25qx_Driver->buf, 3);
 	W25qx_Driver->DEV_ID_PC = W25QXX_READ_ID_CMP;
 	return CORE_RUNNING;
 W25QXX_READ_ID_CMP:
-	if( W25qx_Driver->SPI_Driver->endp(W25qx_Driver->SPI_Driver) != CORE_DONE){
+	if( SPIx_Endp(W25qx_Driver->Bus) != CORE_DONE){
 		return CORE_RUNNING;
 	}
 	W25qx_Driver->DEV_ID_Value = W25qx_Driver->buf[0]<<16 | W25qx_Driver->buf[1]<<8 | W25qx_Driver->buf[2];
 	switch(W25qx_Driver->DEV_ID_Value)
 	{
 		case W25Q64: 	W25qx_Driver->DEV_ID = W25Q64; break;
-		default: 		W25qx_Driver->DEV_ID = W25Q64; break;
+		default: 		W25qx_Driver->DEV_ID = W25QXX; break;
 	};
 	
-	W25qx_Driver->SPI_Driver->close(W25qx_Driver->SPI_Driver,W25qx_Driver->BUS_ID); 	 
+	SPIx_Close(W25qx_Driver->Bus,W25qx_Driver->BUS_ID); 	 
 	W25qx_Driver->DEV_ID_PC = W25QXX_READ_ID_PARAM;
 	return CORE_DONE;
 }
 
-void W25QXX_Init(W25qx_Driver_t *W25qx_Driver)
-{
-	W25qx_Driver->SPI_Driver  = &SPI_Driver0;
-	W25qx_Driver->BUS_ID 	  = 0;
-	w25qxx_driver_pc_reset(W25qx_Driver);
-	while( w25qxx_ID_Manufacturer(W25qx_Driver) != CORE_DONE);
-}
 
 
 
@@ -696,5 +685,43 @@ void w25qxx_ymodem_erase(uint32_t addr, uint32_t ByteLen)
 }
 
 
-
+void w25qxx_test(W25qx_Driver_t *W25qx_Driver)
+{
+	uint32_t addr = 0x20000;
+	int i;
+	uint8_t Txbuf[4];
+	uint8_t Rxbuf[4];
+	
+	for( i = 0; i< 4;i++)
+	{
+		Txbuf[i] = i+1;
+	}
+	printf("\r\n/************start***********/");
+	while(W25QXX_Read(W25qx_Driver, Rxbuf,addr,4) != CORE_DONE);
+	
+	printf("\r\nW25Qxx read addr %d data:\r\n",addr);
+	for( i = 0; i<4;i++){
+		printf("0x%02x ",Rxbuf[i]);
+	}
+	printf(" | 0x%02x\r\n",i);
+	printf("/************read done**********/\r\n");
+	
+	printf("\r\n/**********write start**********/");
+	while(W25QXX_Write(W25qx_Driver,Txbuf,addr,4) != CORE_DONE);
+	printf("\r\nW25Qxx write addr %d data:\r\n",addr);
+	for( i = 0; i<4;i++){
+		printf("0x%02x ",Txbuf[i]);
+	}
+	printf(" | 0x%02x\r\n",i);
+	
+	printf("\r\n/************wait***********/");
+	while(W25QXX_Read(W25qx_Driver, Rxbuf,addr,4) != CORE_DONE);
+	
+	printf("\r\nW25Qxx read addr %d data:\r\n",addr);
+	for( i = 0; i<4;i++){
+		printf("0x%02x ",Rxbuf[i]);
+	}
+	printf(" | 0x%02x\r\n",i);
+	printf("/************read done**********/\r\n");
+}
 

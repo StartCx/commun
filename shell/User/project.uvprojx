@@ -627,25 +627,30 @@
               <FileType>1</FileType>
               <FilePath>..\bsp\timer.c</FilePath>
             </File>
+            <File>
+              <FileName>can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\can.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>Devices</GroupName>
           <Files>
             <File>
-              <FileName>dht11.c</FileName>
+              <FileName>w25qx.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Device\dht11.c</FilePath>
+              <FilePath>..\Device\w25qx.c</FilePath>
             </File>
             <File>
-              <FileName>hc_sr04.c</FileName>
+              <FileName>at24cxx.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Device\hc_sr04.c</FilePath>
+              <FilePath>..\Device\at24cxx.c</FilePath>
             </File>
             <File>
-              <FileName>DS18B20.c</FileName>
+              <FileName>oled.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Device\DS18B20.c</FilePath>
+              <FilePath>..\Device\oled.c</FilePath>
             </File>
           </Files>
         </Group>

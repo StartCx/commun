@@ -203,7 +203,7 @@ SPI_DRIVER_WRITE_THEN_READ1:
 	return;
 SPI_DRIVER_MODE_PARAM_INIT:
 	SPI_Driver->Register.R1_Index = 0;
-	if( SPI_Driver->First_Bit == MSB_FIRST){
+	if( SPI_Driver->First_Bit == LSB_FIRST){
 		SPI_Driver->Register.R10_Mask = 0x01;
 	}else{
 		SPI_Driver->Register.R10_Mask = 0x80;
@@ -319,7 +319,7 @@ SPI_DRIVER_RX_DATA_GET:
 	}else{
 		SPI_Driver->Register.R2_cin = 0xFF;
 	}
-	if( SPI_Driver->First_Bit == MSB_FIRST){
+	if( SPI_Driver->First_Bit == LSB_FIRST){
 		SPI_Driver->Register.R10_Mask = 0x01;
 	}else{
 		SPI_Driver->Register.R10_Mask = 0x80;

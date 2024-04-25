@@ -4,22 +4,24 @@
 #define OLED_Data_Address		0x40
 
 const uint8_t OLED_Init_Array[] = {
-	0xAE,0x00,0x10,0x40,0xB0,0x81,0xFF,0xA1,0xA6,0x3F,0xC8,0xD3,0x00,0xD5,0x80,0xD8,0x05,0xD9,0xF1,0xDA,0x12,0xDB,0x30,0x8D,0x14,0xAF
+	0xAE,0x00,0x10,0x40,0xB0,0x81,0xFF,0xA1,0xA6,0x3F,
+	0xC8,0xD3,0x00,0xD5,0x80,0xD8,0x05,0xD9,0xF1,0xDA,
+	0x12,0xDB,0x30,0x8D,0x14,0xAF
 };
 
 OLED_Device_t OLED_Device = {
-	.Dev_Addr = 0x78,
-	.Init = OLED_Init,
-	.Gram = OLED_Refresh_Gram,
+	.Bus		= I2C2_M_BITBANG,
+	.Dev_Addr 	= 0x78,
+	.Init 		= OLED_Init,
+	.Gram 		= OLED_Refresh_Gram,
 	.Write_String = OLED_ShowString,
-	.Timer = {
-		.TickPeroid = 10,//5s
+	.Timer 		= {
+		.TickPeroid = 10,
 	},
-	.Register = {
+	.Register 	= {
 		.R9_Error = BUS_ERROR,
 	},
 };
-
 
 
 char OLED_Write_Data(struct OLED_Device_t *Dev, uint8_t *buf, uint16_t size)
@@ -40,23 +42,23 @@ char OLED_Write_Data(struct OLED_Device_t *Dev, uint8_t *buf, uint16_t size)
 	};
 	goto *function[Dev->Register.R15_PC];
 OLED_Device_SET_PROC_GROUP15:
-	if( i2c_open_dev(Dev->I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(Dev->Bus) == CORE_SUCCESS){
 		Dev->Register.R15_PC = OLED_Device_SET_PROC_GROUP16;
 	}
 	return CORE_RUNNING;
 OLED_Device_SET_PROC_GROUP16:
-	i2c_write_dev_reg_value_proc(Dev->I2C_Driver, Dev->Dev_Addr, OLED_Data_Address, 1, buf, size);
+	I2Cx_Set(Dev->Bus, Dev->Dev_Addr, OLED_Data_Address, 1, buf, size);
 	Dev->Register.R15_PC = OLED_Device_SET_PROC_GROUP17;
 	return CORE_RUNNING;
 OLED_Device_SET_PROC_GROUP17:
-	if( i2c_write_read_endp(Dev->I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(Dev->Bus) == CORE_DONE){
 		Dev->Register.R15_PC = OLED_Device_SET_PROC_GROUP18;
 	}
 	return CORE_RUNNING;
 OLED_Device_SET_PROC_GROUP18:
-	Dev->Register.R9_Error = i2c_endp_result(Dev->I2C_Driver);
+	Dev->Register.R9_Error = I2Cx_Result(Dev->Bus);
 	Dev->Register.R15_PC = OLED_Device_SET_PROC_GROUP15;
-	i2c_close_dev(Dev->I2C_Driver);
+	I2Cx_Close(Dev->Bus);
 	return CORE_DONE;
 
 }
@@ -80,24 +82,24 @@ char OLED_Write_Command(struct OLED_Device_t *Dev, uint8_t cmd)
 	};
 	goto *function[Dev->Register.R15_PC];
 OLED_Device_CMD_PROC_GROUP15:
-	if( i2c_open_dev(Dev->I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(Dev->Bus) == CORE_SUCCESS){
 		Dev->Register.R15_PC = OLED_Device_CMD_PROC_GROUP16;
 	}
 	return CORE_RUNNING;
 OLED_Device_CMD_PROC_GROUP16:
 	Dev->Register.R2_cin = cmd;
-	i2c_write_dev_reg_value_proc(Dev->I2C_Driver, Dev->Dev_Addr, OLED_Cmd_Address, 1, &Dev->Register.R2_cin, 1);
+	I2Cx_Set(Dev->Bus, Dev->Dev_Addr, OLED_Cmd_Address, 1, &Dev->Register.R2_cin, 1);
 	Dev->Register.R15_PC = OLED_Device_CMD_PROC_GROUP17;
 	return CORE_RUNNING;
 OLED_Device_CMD_PROC_GROUP17:
-	if( i2c_write_read_endp(Dev->I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(Dev->Bus) == CORE_DONE){
 		Dev->Register.R15_PC = OLED_Device_CMD_PROC_GROUP18;
 	}
 	return CORE_RUNNING;
 OLED_Device_CMD_PROC_GROUP18:
-	Dev->Register.R9_Error = i2c_endp_result(Dev->I2C_Driver);
+	Dev->Register.R9_Error = I2Cx_Result(Dev->Bus);
 	Dev->Register.R15_PC = OLED_Device_CMD_PROC_GROUP15;
-	i2c_close_dev(Dev->I2C_Driver);
+	I2Cx_Close(Dev->Bus);
 	return CORE_DONE;
 }
 
@@ -106,7 +108,6 @@ OLED_Device_CMD_PROC_GROUP18:
 //初始化OLED
 uint8_t OLED_Init(struct OLED_Device_t *Dev)
 {
-	
 	enum
 	{
 		OLED_Device_INIT_PROC_GROUP15,
@@ -123,23 +124,22 @@ uint8_t OLED_Init(struct OLED_Device_t *Dev)
 	};
 	goto *function[Dev->Register.R15_PC];
 OLED_Device_INIT_PROC_GROUP15:
-	Dev->I2C_Driver = &I2C_Master;
-	if( i2c_open_dev(Dev->I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(Dev->Bus) == CORE_SUCCESS){
 		Dev->Register.R15_PC = OLED_Device_INIT_PROC_GROUP16;
 	}
 	return CORE_RUNNING;
 OLED_Device_INIT_PROC_GROUP16:
-	i2c_write_dev_reg_value_proc(Dev->I2C_Driver, Dev->Dev_Addr, OLED_Cmd_Address, 1, (uint8_t*)OLED_Init_Array, sizeof(OLED_Init_Array));
+	I2Cx_Set(Dev->Bus, Dev->Dev_Addr, OLED_Cmd_Address, 1, (uint8_t*)OLED_Init_Array, sizeof(OLED_Init_Array));
 	Dev->Register.R15_PC = OLED_Device_INIT_PROC_GROUP17;
 	return CORE_RUNNING;
 OLED_Device_INIT_PROC_GROUP17:
-	if( i2c_write_read_endp(Dev->I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(Dev->Bus) == CORE_DONE){
 		Dev->Register.R15_PC = OLED_Device_INIT_PROC_GROUP18;
 	}
 	return CORE_RUNNING;
 OLED_Device_INIT_PROC_GROUP18:
-	Dev->Register.R9_Error = i2c_endp_result(Dev->I2C_Driver);
-	i2c_close_dev(Dev->I2C_Driver);
+	Dev->Register.R9_Error = I2Cx_Result(Dev->Bus);
+	I2Cx_Close(Dev->Bus);
 	Dev->Register.R15_PC = OLED_Device_INIT_PROC_GROUP15;
 	if( Dev->Register.R9_Error == NO_ERROR){
 		return CORE_DONE;
@@ -152,7 +152,7 @@ OLED_Device_INIT_PROC_GROUP18:
 
 
 //更新显存到LCD
-void OLED_Refresh_Gram(struct OLED_Device_t *Dev)
+uint8_t OLED_Refresh_Gram(struct OLED_Device_t *Dev)
 {
 	if( Dev->Register.R9_Error != NO_ERROR){
 		if( Dev->Init(Dev) == CORE_DONE){
@@ -174,8 +174,12 @@ void OLED_Refresh_Gram(struct OLED_Device_t *Dev)
 		if(OLED_Write_Data(Dev,&Dev->OLED_GRAM[Dev->y*128],128) == CORE_DONE){
 			Dev->oled_state = STATE_POS1;
 			Dev->y = (Dev->y + 1) % 8;
+			if( Dev->y == 7){
+				return 1;
+			}
 		}
 	}
+	return 0;
 }
 
 

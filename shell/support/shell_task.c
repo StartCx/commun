@@ -256,84 +256,6 @@ LED_PROC_GROUP10:
 	return CORE_RUNNING;
 }
 
-
-/******************************************************led****************************************************/
-
-int do_dht11(int argc,char *argv[])
-{	
-	enum
-	{
-		DHT11_PROC_GROUP0,
-		DHT11_PROC_GROUP1,
-		DHT11_PROC_GROUP1_1,
-		DHT11_PROC_GROUP2,
-		DHT11_PROC_GROUP3,
-		DHT11_PROC_GROUP4,
-		DHT11_PROC_GROUP5,
-		DHT11_PROC_SUM,
-	};
-	static const void *function[DHT11_PROC_SUM] = {
-		[DHT11_PROC_GROUP0] 	= &&DHT11_PROC_GROUP0,
-		[DHT11_PROC_GROUP1] 	= &&DHT11_PROC_GROUP1,
-		[DHT11_PROC_GROUP1_1] 	= &&DHT11_PROC_GROUP1_1,
-		[DHT11_PROC_GROUP2] 	= &&DHT11_PROC_GROUP2,
-		[DHT11_PROC_GROUP3] 	= &&DHT11_PROC_GROUP3,
-		[DHT11_PROC_GROUP4] 	= &&DHT11_PROC_GROUP4,
-		[DHT11_PROC_GROUP5] 	= &&DHT11_PROC_GROUP5,
-	};
-	goto *function[Shell_Task.Register.R15_PC];
-DHT11_PROC_GROUP0:
-	if(argc == 1){
-		DHT11_Start(&DHT11_Driver);
-		Shell_Task.Register.R15_PC = DHT11_PROC_GROUP4;
-	}else{
-		Shell_Task.Register.R15_PC = DHT11_PROC_GROUP2;
-	}
-	return CORE_RUNNING;
-DHT11_PROC_GROUP1:
-	string_printf(&fmt_driver, "\r\n## humi = %d.%d RH, temp = %d.%d C",DHT11_Driver.humi_int,DHT11_Driver.humi_deci, DHT11_Driver.temp_int,DHT11_Driver.temp_deci);
-	Shell_Task.Register.R15_PC = DHT11_PROC_GROUP1_1;
-	return CORE_RUNNING;
-DHT11_PROC_GROUP1_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = DHT11_PROC_GROUP3;
-		Shell_Task.Register.R1_Index = 0;
-	}else{
-		Shell_Task.Register.R15_PC = DHT11_PROC_GROUP1;
-	}
-	return CORE_RUNNING;
-DHT11_PROC_GROUP2:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = DHT11_PROC_GROUP3;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-DHT11_PROC_GROUP3:	
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-		Shell_Task.Register.R1_Index++;
-	}else{
-		Shell_Task.Register.R15_PC = DHT11_PROC_GROUP4;
-	}
-	return CORE_RUNNING;
-DHT11_PROC_GROUP4:
-	if( KeyboardInterrupt(&Shell_Device) == 1){
-		Shell_Task.Register.R15_PC = DHT11_PROC_GROUP0;
-		DHT11_Stop(&DHT11_Driver);
-		return CORE_DONE;
-	}else if( DHT11_Driver.Done == 1){
-		DHT11_Driver.Done = 0;
-		Shell_Task.Register.R15_PC = DHT11_PROC_GROUP5;
-	}
-	return CORE_RUNNING;
-DHT11_PROC_GROUP5:
-	Shell_Task.Register.R15_PC = DHT11_PROC_GROUP1;
-	return CORE_RUNNING;
-}
-
-
-/******************************************************do_top****************************************************/
 int do_top(int argc,char *argv[])
 {	
 	enum
@@ -2001,7 +1923,7 @@ ADC_PROC_GROUP2:
 	}
 	return CORE_RUNNING;
 ADC_PROC_GROUP3:	
-	string_printf(&fmt_driver, "\r\n\r\n##Vref = 3300mV, PB0 = %4dmV,",Shell_Task.Register.R0_Result);
+	string_printf(&fmt_driver, "\r\n\r\n##Vref = 3300mV, PA0 = %4dmV,",Shell_Task.Register.R0_Result);
 	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = ADC_PROC_GROUP4;
 		Shell_Task.Register.R15_PC = ADC_PROC_GROUP7;
@@ -2020,7 +1942,7 @@ ADC_PROC_GROUP5:
 	}
 	return CORE_RUNNING;
 ADC_PROC_GROUP6:	
-	string_printf(&fmt_driver, "PB1 = %4dmV.\r\n",Shell_Task.Register.R0_Result);
+	string_printf(&fmt_driver, "PA1 = %4dmV.\r\n",Shell_Task.Register.R0_Result);
 	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = ADC_PROC_GROUP8;
 		Shell_Task.Register.R15_PC = ADC_PROC_GROUP7;
@@ -2390,19 +2312,18 @@ PARSE_ARGV2:
 	}
 	
 	ymodem.Init_addr = Shell_Task.Register.Address;
-	
+	Shell_Task.Register.retry = 1000;
 	if( Shell_Task.Register.R5_Object == 0){
 		ymodem.Erase = FlashErase;
 		ymodem.Write = FlashWrite;
 		goto YMODEM_PROC;
 	}else if(Shell_Task.Register.R5_Object == 1){
-//		w25qxx_driver_pc_reset(&W25qx);
-//		ymodem.Erase = w25qxx_ymodem_erase;
-//		ymodem.Write = w25qxx_ymodem_write;
+		ymodem.Erase = w25qxx_ymodem_erase;
+		ymodem.Write = w25qxx_ymodem_write;
 		goto WAIT_SPI_BUS;
 	}else if(Shell_Task.Register.R5_Object == 2){
-//		ymodem.Erase = NULL;
-//		ymodem.Write = EEPROM_ymodem_write;
+		ymodem.Erase = NULL;
+		ymodem.Write = EEPROM_ymodem_write;
 		goto WAIT_I2C_BUS;
 	}else{
 		printf("\r\n## Object Error\r\n");
@@ -2410,763 +2331,30 @@ PARSE_ARGV2:
 		return CORE_DONE;
 	}
 WAIT_SPI_BUS:	
-//	if( W25qx.SPI_Driver->open(W25qx.SPI_Driver,W25qx.BUS_ID) == CORE_SUCCESS){
-//		W25qx.SPI_Driver->close(W25qx.SPI_Driver,W25qx.BUS_ID);
-//		goto YMODEM_PROC;
-//	}else{
-//		Shell_Task.Register.R15_PC = WAIT_SPI_BUS;
-//	}
+	if( SPIx_Open(W25qx.Bus,W25qx.BUS_ID) == CORE_SUCCESS){
+		SPIx_Close(W25qx.Bus,W25qx.BUS_ID);
+		goto YMODEM_PROC;
+	}else if(Shell_Task.Register.retry > 0){
+		Shell_Task.Register.retry--;
+	}else{
+		printf("\r\n## open bus timeout!!!\r\n");
+		Shell_Task.Register.R15_PC = Ymodem_INIT;
+		return CORE_DONE;
+	}
 	return CORE_RUNNING;
 WAIT_I2C_BUS:
-//	if( EEPROM_Driver.I2C_Driver->open(EEPROM_Driver.I2C_Driver) == CORE_SUCCESS){
-//		EEPROM_Driver.I2C_Driver->close(EEPROM_Driver.I2C_Driver);
-//		goto YMODEM_PROC;
-//	}else{
-//		Shell_Task.Register.R15_PC = WAIT_I2C_BUS;
-//	}
+	if( I2Cx_Open(EEPROM_Driver.BUS) == CORE_SUCCESS){
+		I2Cx_Close(EEPROM_Driver.BUS);
+		goto YMODEM_PROC;
+	}else{
+		Shell_Task.Register.R15_PC = WAIT_I2C_BUS;
+	}
 	return CORE_RUNNING;
 YMODEM_PROC:
 	ymodem_Task(&Shell_Device.Shell_Driver.Shell_Queue);
 	Shell_Task.Register.R15_PC = Ymodem_INIT;
 	return CORE_DONE;
 }
-
-
-
-int do_encoder(int argc,char *argv[])
-{	
-	enum
-	{
-		ENCODER_PROC_GROUP0,
-		ENCODER_PROC_GROUP1,
-		ENCODER_PROC_GROUP1_1,
-		ENCODER_PROC_GROUP2,
-		ENCODER_PROC_GROUP3,
-		ENCODER_PROC_GROUP4,
-		ENCODER_PROC_GROUP5,
-		ENCODER_PROC_SUM,
-	};
-	static const void *function[ENCODER_PROC_SUM] = {
-		[ENCODER_PROC_GROUP0] 	= &&ENCODER_PROC_GROUP0,
-		[ENCODER_PROC_GROUP1] 	= &&ENCODER_PROC_GROUP1,
-		[ENCODER_PROC_GROUP1_1] 	= &&ENCODER_PROC_GROUP1_1,
-		[ENCODER_PROC_GROUP2] 	= &&ENCODER_PROC_GROUP2,
-		[ENCODER_PROC_GROUP3] 	= &&ENCODER_PROC_GROUP3,
-		[ENCODER_PROC_GROUP4] 	= &&ENCODER_PROC_GROUP4,
-		[ENCODER_PROC_GROUP5] 	= &&ENCODER_PROC_GROUP5,
-	};
-	goto *function[Shell_Task.Register.R15_PC];
-ENCODER_PROC_GROUP0:
-	if(argc == 1){
-		Encoder.cur_encode = 0;
-		Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP1;
-	}else{
-		Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP2;
-	}
-	return CORE_RUNNING;
-ENCODER_PROC_GROUP1:
-	string_printf(&fmt_driver, "\r\n## encode count = %d",Encoder.cur_encode);
-	Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP1_1;
-	return CORE_RUNNING;
-ENCODER_PROC_GROUP1_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP3;
-		Shell_Task.Register.R1_Index = 0;
-	}else{
-		Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP1;
-	}
-	return CORE_RUNNING;
-ENCODER_PROC_GROUP2:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP3;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-ENCODER_PROC_GROUP3:	
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-		Shell_Task.Register.R1_Index++;
-	}else{
-		Shell_Task.Register.R1_Index = 500;
-		Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP4;
-	}
-	return CORE_RUNNING;
-ENCODER_PROC_GROUP4:
-	if( Shell_Task.Register.R1_Index == 0){
-		Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP5;
-	}else{
-		Shell_Task.Register.R1_Index--;
-	}
-	return CORE_RUNNING;
-ENCODER_PROC_GROUP5:
-	Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP1;
-	if( KeyboardInterrupt(&Shell_Device) == 1){
-		Shell_Task.Register.R15_PC = ENCODER_PROC_GROUP0;
-		return CORE_DONE;
-	}
-	return CORE_RUNNING;
-}
-
-
-int do_HCSR04(int argc,char *argv[])
-{	
-	enum
-	{
-		HCSR04_PROC_GROUP0,
-		HCSR04_PROC_GROUP1,
-		HCSR04_PROC_GROUP1_1,
-		HCSR04_PROC_GROUP2,
-		HCSR04_PROC_GROUP3,
-		HCSR04_PROC_GROUP4,
-		HCSR04_PROC_GROUP5,
-		HCSR04_PROC_SUM,
-	};
-	static const void *function[HCSR04_PROC_SUM] = {
-		[HCSR04_PROC_GROUP0] 	= &&HCSR04_PROC_GROUP0,
-		[HCSR04_PROC_GROUP1] 	= &&HCSR04_PROC_GROUP1,
-		[HCSR04_PROC_GROUP1_1] 	= &&HCSR04_PROC_GROUP1_1,
-		[HCSR04_PROC_GROUP2] 	= &&HCSR04_PROC_GROUP2,
-		[HCSR04_PROC_GROUP3] 	= &&HCSR04_PROC_GROUP3,
-		[HCSR04_PROC_GROUP4] 	= &&HCSR04_PROC_GROUP4,
-		[HCSR04_PROC_GROUP5] 	= &&HCSR04_PROC_GROUP5,
-	};
-	goto *function[Shell_Task.Register.R15_PC];
-HCSR04_PROC_GROUP0:
-	if(argc == 1){
-		Shell_Task.Register.R15_PC = HCSR04_PROC_GROUP1;
-	}else{
-		Shell_Task.Register.R15_PC = HCSR04_PROC_GROUP2;
-	}
-	return CORE_RUNNING;
-HCSR04_PROC_GROUP1:
-	string_printf(&fmt_driver, "\r\n## HC SR04 distance = %d",HC_SR04_Dev.Register.R0_Result);
-	Shell_Task.Register.R15_PC = HCSR04_PROC_GROUP1_1;
-	return CORE_RUNNING;
-HCSR04_PROC_GROUP1_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = HCSR04_PROC_GROUP3;
-		Shell_Task.Register.R1_Index = 0;
-	}else{
-		Shell_Task.Register.R15_PC = HCSR04_PROC_GROUP1;
-	}
-	return CORE_RUNNING;
-HCSR04_PROC_GROUP2:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = HCSR04_PROC_GROUP3;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-HCSR04_PROC_GROUP3:	
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-		Shell_Task.Register.R1_Index++;
-	}else{
-		Shell_Task.Register.R1_Index = 500;
-		Shell_Task.Register.R15_PC = HCSR04_PROC_GROUP4;
-	}
-	return CORE_RUNNING;
-HCSR04_PROC_GROUP4:
-	if( Shell_Task.Register.R1_Index == 0){
-		Shell_Task.Register.R15_PC = HCSR04_PROC_GROUP5;
-	}else{
-		Shell_Task.Register.R1_Index--;
-	}
-	return CORE_RUNNING;
-HCSR04_PROC_GROUP5:
-	Shell_Task.Register.R15_PC = HCSR04_PROC_GROUP0;
-	if( KeyboardInterrupt(&Shell_Device) == 1){
-		return CORE_DONE;
-	}
-	return CORE_RUNNING;
-}
-
-int do_NEC_IR(int argc,char *argv[])
-{
-	enum
-	{
-		NEC_IR_PROC_GROUP0,
-		NEC_IR_PROC_GROUP1,
-		NEC_IR_PROC_GROUP2,
-		NEC_IR_PROC_GROUP3,
-		NEC_IR_PROC_ECHO,
-		NEC_IR_PROC_SUM,
-	};
-	static const void *function[NEC_IR_PROC_SUM] = {
-		[NEC_IR_PROC_GROUP0] 	= &&NEC_IR_PROC_GROUP0,
-		[NEC_IR_PROC_GROUP1] 	= &&NEC_IR_PROC_GROUP1,
-		[NEC_IR_PROC_GROUP2] 	= &&NEC_IR_PROC_GROUP2,
-		[NEC_IR_PROC_GROUP3] 	= &&NEC_IR_PROC_GROUP3,
-		[NEC_IR_PROC_ECHO] 	= &&NEC_IR_PROC_ECHO,
-	};
-	goto *function[Shell_Task.Register.R15_PC];
-NEC_IR_PROC_GROUP0:
-	string_printf(&fmt_driver, "\r\nNEC IR DECODE...\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R14_LR = NEC_IR_PROC_GROUP1;
-		Shell_Task.Register.R15_PC = NEC_IR_PROC_ECHO;
-		QueueEmpty(&IR_Register.Queue);
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-NEC_IR_PROC_GROUP1:
-	if( QueueLength(&IR_Register.Queue)	> 0){
-		Shell_Task.Register.R15_PC = NEC_IR_PROC_GROUP2;
-	}else{
-		if( KeyboardInterrupt(&Shell_Device) == 1){
-			Shell_Task.Register.R15_PC = NEC_IR_PROC_GROUP0;
-			return CORE_DONE;
-		}
-	}
-	return CORE_RUNNING;
-NEC_IR_PROC_GROUP2:
-	Shell_Task.Register.R0_Result = 0;
-	QueueDataOut(&IR_Register.Queue, &Shell_Task.Register.R2_cin);
-	Shell_Task.Register.R0_Result |= Shell_Task.Register.R2_cin << 24;
-	QueueDataOut(&IR_Register.Queue, &Shell_Task.Register.R2_cin);
-	Shell_Task.Register.R0_Result |= Shell_Task.Register.R2_cin << 16;
-	QueueDataOut(&IR_Register.Queue, &Shell_Task.Register.R2_cin);
-	Shell_Task.Register.R0_Result |= Shell_Task.Register.R2_cin << 8;
-	QueueDataOut(&IR_Register.Queue, &Shell_Task.Register.R2_cin);
-	Shell_Task.Register.R0_Result |= Shell_Task.Register.R2_cin;
-	Shell_Task.Register.R15_PC = NEC_IR_PROC_GROUP3;
-	return CORE_RUNNING;
-NEC_IR_PROC_GROUP3:
-	string_printf(&fmt_driver, "0x%8x\r\n", Shell_Task.Register.R0_Result);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R14_LR = NEC_IR_PROC_GROUP1;
-		Shell_Task.Register.R15_PC = NEC_IR_PROC_ECHO;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-NEC_IR_PROC_ECHO:	
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-		Shell_Task.Register.R1_Index++;
-	}else{
-		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
-	}
-	return CORE_RUNNING;
-}
-
-
-int do_key(int argc,char *argv[])
-{	
-	enum
-	{
-		KEY_DETECT_PROC_GROUP0,
-		KEY_DETECT_PROC_GROUP0_1,
-		KEY_DETECT_PROC_GROUP0_2,
-		KEY_DETECT_PROC_GROUP0_2_1,
-		KEY_DETECT_PROC_GROUP0_2_2,
-		KEY_DETECT_PROC_GROUP0_3,
-		KEY_DETECT_PROC_GROUP0_4,
-		KEY_DETECT_PROC_GROUP1,
-		KEY_DETECT_PROC_GROUP2,
-		KEY_DETECT_PROC_GROUP3,
-		KEY_DETECT_PROC_GROUP4,
-		KEY_DETECT_PROC_GROUP5,
-		KEY_DETECT_PROC_GROUP6,
-		KEY_DETECT_PROC_GROUP6_1,
-		KEY_DETECT_PROC_GROUP6_2,
-		KEY_DETECT_PROC_GROUP7,
-		KEY_DETECT_PROC_GROUP8,
-		KEY_DETECT_STATE_SUM,
-	};
-
-	static const void *function[KEY_DETECT_STATE_SUM] = {
-		[KEY_DETECT_PROC_GROUP0] 	= &&KEY_DETECT_PROC_GROUP0,
-		
-		[KEY_DETECT_PROC_GROUP0_1] 	= &&KEY_DETECT_PROC_GROUP0_1,
-		[KEY_DETECT_PROC_GROUP0_2] 	= &&KEY_DETECT_PROC_GROUP0_2,
-		[KEY_DETECT_PROC_GROUP0_2_1]= &&KEY_DETECT_PROC_GROUP0_2_1,
-		[KEY_DETECT_PROC_GROUP0_2_2]= &&KEY_DETECT_PROC_GROUP0_2_2,
-		[KEY_DETECT_PROC_GROUP0_3] 	= &&KEY_DETECT_PROC_GROUP0_3,
-		[KEY_DETECT_PROC_GROUP0_4] 	= &&KEY_DETECT_PROC_GROUP0_4,
-		
-		[KEY_DETECT_PROC_GROUP1] 	= &&KEY_DETECT_PROC_GROUP1,
-		[KEY_DETECT_PROC_GROUP2] 	= &&KEY_DETECT_PROC_GROUP2,
-		[KEY_DETECT_PROC_GROUP3] 	= &&KEY_DETECT_PROC_GROUP3,
-		[KEY_DETECT_PROC_GROUP4] 	= &&KEY_DETECT_PROC_GROUP4,
-		[KEY_DETECT_PROC_GROUP5] 	= &&KEY_DETECT_PROC_GROUP5,
-		[KEY_DETECT_PROC_GROUP6] 	= &&KEY_DETECT_PROC_GROUP6,
-		[KEY_DETECT_PROC_GROUP6_1] 	= &&KEY_DETECT_PROC_GROUP6_1,
-		[KEY_DETECT_PROC_GROUP6_2] 	= &&KEY_DETECT_PROC_GROUP6_2,
-		[KEY_DETECT_PROC_GROUP7] 	= &&KEY_DETECT_PROC_GROUP7,
-		[KEY_DETECT_PROC_GROUP8]	= &&KEY_DETECT_PROC_GROUP8,
-	};
-
-	goto *function[Shell_Task.Register.R15_PC];
-KEY_DETECT_PROC_GROUP0:
-	if(argc == 2){
-		QueueEmpty(&Encode_KEY.Queue);
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0_1;
-	}else{
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0_3;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP0_1:
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0_2;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP0_2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0_3;
-	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0_2_1;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP0_2_1:
-	if( Shell_Task.Register.R5_Object == 0){
-		Shell_Task.KEY = &Encode_KEY;
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0_2_2;
-	}else{
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0_3;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP0_2_2:
-	string_printf(&fmt_driver, "\r\n\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R14_LR = KEY_DETECT_PROC_GROUP1;
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP7;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP0_3:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0_4;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP0_4:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-		Shell_Task.Register.R1_Index++;
-	}else{
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0;
-		return CORE_DONE;	
-	}
-	return CORE_RUNNING;	
-KEY_DETECT_PROC_GROUP1:
-	if( QueueLength(&Shell_Task.KEY->Queue)	> 0){
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP2;
-	}else{
-		if( KeyboardInterrupt(&Shell_Device) == 1){
-			Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0;
-			return CORE_DONE;
-		}
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP2:
-	QueueDataOut(&Shell_Task.KEY->Queue, &Shell_Task.Register.R2_cin);
-	Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP3;
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP3:
-	if( Shell_Task.Register.R2_cin == KEY_CLICK){
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP4;
-	}else if( Shell_Task.Register.R2_cin == KEY_CLICK_RELEASE){
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP5;
-	}else if( Shell_Task.Register.R2_cin == KEY_LONG_PRESS){
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP6;
-	}else if( Shell_Task.Register.R2_cin == KEY_LONG_PRESS_CONTINUOUS){
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP6_1;
-	}else if( Shell_Task.Register.R2_cin == KEY_LONG_PRESS_RELEASE){
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP6_2;
-	}else{
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP0;
-		return CORE_DONE;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP4:
-	string_printf(&fmt_driver, "KEY_CLICK\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R14_LR = KEY_DETECT_PROC_GROUP8;
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP7;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP5:
-	string_printf(&fmt_driver, "KEY_CLICK_RELEASE\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R14_LR = KEY_DETECT_PROC_GROUP8;
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP7;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP6:
-	string_printf(&fmt_driver, "KEY_LONG_PRESS\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R14_LR = KEY_DETECT_PROC_GROUP8;
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP7;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP6_1:
-	string_printf(&fmt_driver, "KEY_LONG_PRESS_CONTINUOUS\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R14_LR = KEY_DETECT_PROC_GROUP8;
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP7;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP6_2:
-	string_printf(&fmt_driver, "KEY_LONG_PRESS_RELEASE\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R14_LR = KEY_DETECT_PROC_GROUP8;
-		Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP7;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP7:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-		Shell_Task.Register.R1_Index++;
-	}else{
-		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
-	}
-	return CORE_RUNNING;
-KEY_DETECT_PROC_GROUP8:	
-	Shell_Task.Register.R15_PC = KEY_DETECT_PROC_GROUP1;
-	return CORE_RUNNING;
-}
-
-
-int do_servo(int argc,char *argv[])
-{	
-	enum
-	{
-		SERVO_PROC_GROUP0,
-		SERVO_PROC_GROUP1,
-		SERVO_PROC_GROUP2,
-		SERVO_PROC_GROUP3,
-		SERVO_PROC_GROUP4,
-		SERVO_PROC_GROUP5,
-		SERVO_PROC_GROUP6,
-		SERVO_PROC_GROUP7,
-		SERVO_PROC_GROUP8,
-		SERVO_PROC_GROUP13,
-		SERVO_PROC_GROUP14,
-		SERVO_STATE_SUM,
-	};
-	static const void *function[SERVO_STATE_SUM] = {
-		[SERVO_PROC_GROUP0] 	= &&SERVO_PROC_GROUP0,
-		[SERVO_PROC_GROUP1] 	= &&SERVO_PROC_GROUP1,
-		[SERVO_PROC_GROUP2] 	= &&SERVO_PROC_GROUP2,
-		[SERVO_PROC_GROUP3] 	= &&SERVO_PROC_GROUP3,
-		[SERVO_PROC_GROUP4] 	= &&SERVO_PROC_GROUP4,
-		[SERVO_PROC_GROUP5] 	= &&SERVO_PROC_GROUP5,
-		[SERVO_PROC_GROUP6] 	= &&SERVO_PROC_GROUP6,
-		[SERVO_PROC_GROUP7] 	= &&SERVO_PROC_GROUP7,
-		[SERVO_PROC_GROUP8] 	= &&SERVO_PROC_GROUP8,
-		[SERVO_PROC_GROUP13] 	= &&SERVO_PROC_GROUP13,
-		[SERVO_PROC_GROUP14] 	= &&SERVO_PROC_GROUP14,
-
-	};
-	
-	goto *function[Shell_Task.Register.R15_PC];
-	
-SERVO_PROC_GROUP0:
-	if( argc == 4 || argc == 3){
-		sscanf_driver.str = argv[1];
-		Shell_Task.Register.R14_LR = SERVO_PROC_GROUP2;
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP1;
-	}else{
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
-	}
-	return CORE_RUNNING;
-SERVO_PROC_GROUP1:
-	string_scanf(&sscanf_driver,NULL);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
-	}
-	return CORE_RUNNING;
-SERVO_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
-	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP3;
-	}
-	return CORE_RUNNING;
-SERVO_PROC_GROUP3:
-	if( Shell_Task.Register.R5_Object == 0){
-		Shell_Task.Servo = &Servo_Output;
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP4;
-	}else{
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
-	}
-	return CORE_RUNNING;
-SERVO_PROC_GROUP4:
-	sscanf_driver.str = argv[2];
-	Shell_Task.Register.R14_LR = SERVO_PROC_GROUP5;
-	Shell_Task.Register.R15_PC = SERVO_PROC_GROUP1;
-	return CORE_RUNNING;
-SERVO_PROC_GROUP5:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
-	}else{
-		if( sscanf_driver.Register.R0_Result > 250){
-			sscanf_driver.Register.R0_Result = 250;
-		}else if( sscanf_driver.Register.R0_Result < 50){
-			sscanf_driver.Register.R0_Result = 50;
-		}
-		Shell_Task.Servo->target_duty = sscanf_driver.Register.R0_Result;
-		if( argc == 4){
-			Shell_Task.Register.R15_PC = SERVO_PROC_GROUP6;
-		}else{
-			Shell_Task.Servo->Timer.TickPeroid = 2000;
-			Shell_Task.Register.R15_PC = SERVO_PROC_GROUP8;
-		}
-		
-	}
-	return CORE_RUNNING;
-SERVO_PROC_GROUP6:
-	sscanf_driver.str = argv[3];
-	Shell_Task.Register.R14_LR = SERVO_PROC_GROUP7;
-	Shell_Task.Register.R15_PC = SERVO_PROC_GROUP1;
-	return CORE_RUNNING;
-SERVO_PROC_GROUP7:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
-	}else{
-		if( sscanf_driver.Register.R0_Result <= 0){
-			sscanf_driver.Register.R0_Result = 2000;
-		}
-		Shell_Task.Servo->Timer.TickPeroid = sscanf_driver.Register.R0_Result;
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP8;
-	}
-	return CORE_RUNNING;
-SERVO_PROC_GROUP8:
-	string_printf(&fmt_driver, "\r\n## Success servo %d duty %d, angle delay %d.\r\n", Shell_Task.Register.R5_Object,Shell_Task.Servo->target_duty,Shell_Task.Servo->Timer.TickPeroid);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP14;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-SERVO_PROC_GROUP13:
-	string_printf(&fmt_driver, "\r\n## Unexpected exception\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP14;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-SERVO_PROC_GROUP14:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-		Shell_Task.Register.R1_Index++;
-	}else{
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP0;
-		return CORE_DONE;
-	}
-	return CORE_RUNNING;
-}
-
-
-int do_DS18B20(int argc,char *argv[])
-{	
-	enum
-	{
-		DS18B20_PROC_GROUP0,
-		DS18B20_PROC_GROUP1,
-		DS18B20_PROC_GROUP1_1,
-		DS18B20_PROC_GROUP2,
-		DS18B20_PROC_GROUP3,
-		DS18B20_PROC_GROUP4,
-		DS18B20_PROC_GROUP5,
-		DS18B20_PROC_SUM,
-	};
-	static const void *function[DS18B20_PROC_SUM] = {
-		[DS18B20_PROC_GROUP0] 	= &&DS18B20_PROC_GROUP0,
-		[DS18B20_PROC_GROUP1] 	= &&DS18B20_PROC_GROUP1,
-		[DS18B20_PROC_GROUP1_1] = &&DS18B20_PROC_GROUP1_1,
-		[DS18B20_PROC_GROUP2] 	= &&DS18B20_PROC_GROUP2,
-		[DS18B20_PROC_GROUP3] 	= &&DS18B20_PROC_GROUP3,
-		[DS18B20_PROC_GROUP4] 	= &&DS18B20_PROC_GROUP4,
-		[DS18B20_PROC_GROUP5] 	= &&DS18B20_PROC_GROUP5,
-	};
-	goto *function[Shell_Task.Register.R15_PC];
-DS18B20_PROC_GROUP0:
-	if(argc == 1){
-		DS18B20_Start(&DS18B20_Dev);
-		Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP5;
-	}else{
-		Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP2;
-	}
-	return CORE_RUNNING;
-DS18B20_PROC_GROUP1:
-	string_printf(&fmt_driver, "\r\n## DS18B20 Temp = %d.%d¡æ",DS18B20_Dev.Temp/10, DS18B20_Dev.Temp%10);
-	Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP1_1;
-	return CORE_RUNNING;
-DS18B20_PROC_GROUP1_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP3;
-		Shell_Task.Register.R1_Index = 0;
-	}else{
-		Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP1;
-	}
-	return CORE_RUNNING;
-DS18B20_PROC_GROUP2:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP3;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-DS18B20_PROC_GROUP3:	
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-		Shell_Task.Register.R1_Index++;
-	}else{
-		Shell_Task.Register.R1_Index = 0;
-		Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP4;
-	}
-	return CORE_RUNNING;
-DS18B20_PROC_GROUP4:
-	Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP5;
-	return CORE_RUNNING;
-DS18B20_PROC_GROUP5:
-	if( KeyboardInterrupt(&Shell_Device) == 1){
-		Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP0;
-		DS18B20_Stop(&DS18B20_Dev);
-		return CORE_DONE;
-	}else if( DS18B20_Dev.Done == 1){
-		DS18B20_Dev.Done = 0;
-		Shell_Task.Register.R15_PC = DS18B20_PROC_GROUP1;
-	}
-	return CORE_RUNNING;
-}
-
-
-int do_pwm(int argc,char *argv[])
-{
-	enum
-	{
-		PWM_PROC_GROUP0 = 0,
-		PWM_PROC_GROUP1,
-		PWM_PROC_GROUP2,
-		PWM_PROC_GROUP3,
-		PWM_PROC_GROUP4,
-		PWM_PROC_GROUP5,
-		PWM_PROC_GROUP6,
-		PWM_PROC_GROUP7,
-		PWM_PROC_GROUP7_1,
-		PWM_PROC_GROUP8,
-		PWM_PROC_GROUP8_1,
-		PWM_PROC_GROUP9,
-		PWM_PROC_GROUP10,
-		PWM_STATE_SUM,
-	};
-	static const void *function[PWM_STATE_SUM] = {
-		[PWM_PROC_GROUP0] 	= &&PWM_PROC_GROUP0,
-		[PWM_PROC_GROUP1] 	= &&PWM_PROC_GROUP1,
-		[PWM_PROC_GROUP2]   = &&PWM_PROC_GROUP2,
-		[PWM_PROC_GROUP3]   = &&PWM_PROC_GROUP3,
-		[PWM_PROC_GROUP4] 	= &&PWM_PROC_GROUP4,
-		[PWM_PROC_GROUP5] 	= &&PWM_PROC_GROUP5,
-		[PWM_PROC_GROUP6] 	= &&PWM_PROC_GROUP6,
-		[PWM_PROC_GROUP7] 	= &&PWM_PROC_GROUP7,
-		[PWM_PROC_GROUP7_1] = &&PWM_PROC_GROUP7_1,
-		[PWM_PROC_GROUP8] 	= &&PWM_PROC_GROUP8,
-		[PWM_PROC_GROUP8_1] = &&PWM_PROC_GROUP8_1,
-		[PWM_PROC_GROUP9] 	= &&PWM_PROC_GROUP9,
-		[PWM_PROC_GROUP10] 	= &&PWM_PROC_GROUP10,
-	};
-	goto *function[Shell_Task.Register.R15_PC];
-PWM_PROC_GROUP0:
-	if( argc == 3){
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP1;
-	}else{
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP10;
-	}
-	return CORE_RUNNING;
-PWM_PROC_GROUP1:
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP2;
-	}
-	return CORE_RUNNING;
-PWM_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP10;
-	}else{
-		
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP3;
-	}
-	return CORE_RUNNING;
-PWM_PROC_GROUP3:
-	if( Shell_Task.Register.R5_Object == 0){
-		Shell_Task.Simulated_PWM = &Simulated_PWM;
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP4;
-	}else{
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP10;
-	}
-	return CORE_RUNNING;
-PWM_PROC_GROUP4:
-	string_scanf(&sscanf_driver,argv[2]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP5;
-	}
-	return CORE_RUNNING;
-PWM_PROC_GROUP5:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP10;
-	}else{
-		Shell_Task.Register.R4_Status = sscanf_driver.Register.R0_Result;
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP6;
-	}
-	return CORE_RUNNING;
-PWM_PROC_GROUP6:	
-	PWM_Set_HighPulse(Shell_Task.Simulated_PWM, Shell_Task.Register.R4_Status);
-	Shell_Task.Register.R15_PC = PWM_PROC_GROUP7;
-	return CORE_RUNNING;
-PWM_PROC_GROUP7:
-	string_printf(&fmt_driver, "\r\n## PWM %d set to duty %d Preiod %d\r\n", Shell_Task.Register.R5_Object, Simulated_PWM.PwmHighPulse,Simulated_PWM.Pwm_Preiod);
-	Shell_Task.Register.R15_PC = PWM_PROC_GROUP7_1;
-	return CORE_RUNNING;
-PWM_PROC_GROUP7_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP9;
-		Shell_Task.Register.R1_Index = 0;
-	}else{
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP7;
-	}
-	return CORE_RUNNING;
-PWM_PROC_GROUP8:
-	string_printf(&fmt_driver, "\r\n## Error: PWM %d set to duty %d Preiod %d\r\n", Shell_Task.Register.R5_Object, Simulated_PWM.PwmHighPulse,Simulated_PWM.Pwm_Preiod);
-	Shell_Task.Register.R15_PC = PWM_PROC_GROUP8_1;
-	return CORE_RUNNING;
-PWM_PROC_GROUP8_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP9;
-		Shell_Task.Register.R1_Index = 0;
-	}else{
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP8;
-	}
-	return CORE_RUNNING;
-PWM_PROC_GROUP9:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
-		Shell_Task.Register.R1_Index++;
-	}else{
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP0;
-		return CORE_DONE;
-	}
-	return CORE_RUNNING;
-PWM_PROC_GROUP10:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
-		Shell_Task.Register.R15_PC = PWM_PROC_GROUP9;
-		Shell_Task.Register.R1_Index = 0;
-	}
-	return CORE_RUNNING;
-}
-
 
 int do_GPIOget(int argc,char *argv[])
 {
@@ -3435,42 +2623,246 @@ GPIOSet_PROC_GROUP10:
 	return CORE_RUNNING;
 }
 
-int do_config(int argc,char *argv[])
+
+int do_w25q_read(int argc,char *argv[])
 {
-	printf("\r\nhardware spi bus1 pin");
-	printf("\r\n  	SCK  -PA5");
-	printf("\r\n  	MISO -PA6");
-	printf("\r\n  	MOSI -PA7");
-	printf("\r\n  	CS0  -PB0");
-	printf("\r\n  	CS1  -PB1");
-	printf("\r\nBitbang spi bus2 pin");
-	printf("\r\n  	SCK  -PB13");
-	printf("\r\n  	MISO -PB14");
-	printf("\r\n  	MOSI -PB15");
-	printf("\r\n  	CS0  -PB12");
-	printf("\r\n  	CS1  -PA8");
-	printf("\r\nsoftware spi bus3 pin");
-	printf("\r\n  	SCK  -PC14");
-	printf("\r\n  	MISO -PC15");
-	printf("\r\n  	MOSI -PA0");
-	printf("\r\n  	CS0  -PA1");
-	printf("\r\n  	CS1  -PA4");
-	
-	printf("\r\nhardware i2c bus1 pin");
-	printf("\r\n  	SCL  -PB6");
-	printf("\r\n  	SDA  -PB7");
-	printf("\r\nBitbang i2c bus2 pin");
-	printf("\r\n  	SCL  -PB8");
-	printf("\r\n  	SDA  -PB9");
-	printf("\r\nsoftware i2c bus3 pin");
-	printf("\r\n  	SCL  -PB4");
-	printf("\r\n  	SDA  -PB5");
-	printf("\r\nslave i2c bus4 pin");
-	printf("\r\n  	SCL  -PA15");
-	printf("\r\n  	SDA  -PB3");
+	enum
+	{
+		W25Q_PROC_GROUP0 = 0,
+		W25Q_PROC_GROUP1,
+		W25Q_PROC_GROUP2,
+		W25Q_PROC_GROUP3,
+		W25Q_PROC_GROUP4,
+		W25Q_PROC_GROUP5,
+		W25Q_PROC_GROUP6,
+		W25Q_PROC_GROUP7,
+		W25Q_STATE_SUM,
+	};
+	static const void *function[W25Q_STATE_SUM] = {
+		[W25Q_PROC_GROUP0] 	= &&W25Q_PROC_GROUP0,
+		[W25Q_PROC_GROUP1] 	= &&W25Q_PROC_GROUP1,
+		[W25Q_PROC_GROUP2]  = &&W25Q_PROC_GROUP2,
+		[W25Q_PROC_GROUP3]  = &&W25Q_PROC_GROUP3,
+		[W25Q_PROC_GROUP4] 	= &&W25Q_PROC_GROUP4,
+		[W25Q_PROC_GROUP5] 	= &&W25Q_PROC_GROUP5,
+		[W25Q_PROC_GROUP6] 	= &&W25Q_PROC_GROUP6,
+		[W25Q_PROC_GROUP7] 	= &&W25Q_PROC_GROUP7,
+	};
+	goto *function[Shell_Task.Register.R15_PC];
+W25Q_PROC_GROUP0:
+	if(argc == 2){
+		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP1;
+	}else{
+		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP5;
+	}
+	return CORE_RUNNING;
+W25Q_PROC_GROUP1:
+	string_scanf(&sscanf_driver, argv[1]);
+	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP2;
+	}
+	return CORE_RUNNING;
+W25Q_PROC_GROUP2:	
+	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP5;
+	}else{
+		Shell_Task.Register.Address = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP3;
+	}
+	return CORE_RUNNING;
+W25Q_PROC_GROUP3:
+	if( W25QXX_Read(&W25qx, Shell_Task.RxBuf,Shell_Task.Register.Address,1) == CORE_DONE){
+		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP4;
+	}
+W25Q_PROC_GROUP4:
+	string_printf(&fmt_driver, "\r\n## read addr = 0x%2x -> data = 0x%2x\r\n",Shell_Task.Register.Address, Shell_Task.RxBuf[0]);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP6;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+W25Q_PROC_GROUP5:
+	string_printf(&fmt_driver, SHELL_CMD_ERROR);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP6;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+W25Q_PROC_GROUP6:
+	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+		Shell_Task.Register.R1_Index++;
+	}else{
+		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP7;
+	}
+	return CORE_RUNNING;
+W25Q_PROC_GROUP7:
+	Shell_Task.Register.R15_PC = W25Q_PROC_GROUP0;
+	return CORE_DONE;
+}	
+
+int do_w25q_write(int argc,char *argv[])
+{
+	enum
+	{
+		W25Q_WRITE_PROC_GROUP0 = 0,
+		W25Q_WRITE_PROC_GROUP1,
+		W25Q_WRITE_PROC_GROUP2,
+		W25Q_WRITE_PROC_GROUP3,
+		W25Q_WRITE_PROC_GROUP3_1,
+		W25Q_WRITE_PROC_GROUP4,
+		W25Q_WRITE_PROC_GROUP4_1,
+		W25Q_WRITE_PROC_GROUP5,
+		W25Q_WRITE_PROC_GROUP6,
+		W25Q_WRITE_PROC_GROUP7,
+		W25Q_WRITE_STATE_SUM,
+	};
+	static const void *function[W25Q_WRITE_STATE_SUM] = {
+		[W25Q_WRITE_PROC_GROUP0] 	= &&W25Q_WRITE_PROC_GROUP0,
+		[W25Q_WRITE_PROC_GROUP1] 	= &&W25Q_WRITE_PROC_GROUP1,
+		[W25Q_WRITE_PROC_GROUP2]  	= &&W25Q_WRITE_PROC_GROUP2,
+		[W25Q_WRITE_PROC_GROUP3]  	= &&W25Q_WRITE_PROC_GROUP3,
+		[W25Q_WRITE_PROC_GROUP3_1]  = &&W25Q_WRITE_PROC_GROUP3_1,
+		[W25Q_WRITE_PROC_GROUP4] 	= &&W25Q_WRITE_PROC_GROUP4,
+		[W25Q_WRITE_PROC_GROUP4_1] 	= &&W25Q_WRITE_PROC_GROUP4_1,
+		[W25Q_WRITE_PROC_GROUP5] 	= &&W25Q_WRITE_PROC_GROUP5,
+		[W25Q_WRITE_PROC_GROUP6] 	= &&W25Q_WRITE_PROC_GROUP6,
+		[W25Q_WRITE_PROC_GROUP7] 	= &&W25Q_WRITE_PROC_GROUP7,
+	};
+	goto *function[Shell_Task.Register.R15_PC];
+W25Q_WRITE_PROC_GROUP0:
+	if(argc == 3){
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP1;
+	}else{
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP5;
+	}
+	return CORE_RUNNING;
+W25Q_WRITE_PROC_GROUP1:
+	string_scanf(&sscanf_driver, argv[1]);
+	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP2;
+	}
+	return CORE_RUNNING;
+W25Q_WRITE_PROC_GROUP2:	
+	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP5;
+	}else{
+		Shell_Task.Register.Address = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP3;
+	}
+	return CORE_RUNNING;
+W25Q_WRITE_PROC_GROUP3:
+	string_scanf(&sscanf_driver, argv[2]);
+	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+			Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP5;
+		}else{
+			Shell_Task.Register.R2_cin = sscanf_driver.Register.R0_Result;
+			Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP3_1;
+		}
+	}
+	return CORE_RUNNING;
+W25Q_WRITE_PROC_GROUP3_1:
+	if( W25QXX_Write(&W25qx,&Shell_Task.Register.R2_cin,Shell_Task.Register.Address,1) == CORE_DONE){
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP4;
+	}else if( KeyboardInterrupt(&Shell_Device) == 1){
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP0;
+		return CORE_DONE;
+	}else if( W25qx.ret == CORE_ERROR){
+		W25qx.ret = CORE_SUCCESS;
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP4_1;
+	}
+	return CORE_RUNNING;
+W25Q_WRITE_PROC_GROUP4:
+	string_printf(&fmt_driver, "\r\n## write addr = 0x%2x -> data = 0x%2x success\r\n",Shell_Task.Register.Address, Shell_Task.Register.R2_cin);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP6;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+W25Q_WRITE_PROC_GROUP4_1:
+	string_printf(&fmt_driver, "\r\n## write addr = 0x%2x -> data = 0x%2x timeout\r\n",Shell_Task.Register.Address, Shell_Task.Register.R2_cin);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP6;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;	
+W25Q_WRITE_PROC_GROUP5:
+	string_printf(&fmt_driver, SHELL_CMD_ERROR);
+	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP6;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+W25Q_WRITE_PROC_GROUP6:
+	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+		Shell_Task.Register.R1_Index++;
+	}else{
+		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP7;
+	}
+	return CORE_RUNNING;
+W25Q_WRITE_PROC_GROUP7:
+	Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP0;
+	return CORE_DONE;
+}	
+
+void oled_w25qxx_task()
+{
+	enum
+	{
+		oled_w25qxx_PROC_GROUP0 = 0,
+		oled_w25qxx_PROC_GROUP1,
+		oled_w25qxx_PROC_SUM,
+	};
+	static const void *function[oled_w25qxx_PROC_SUM] = {
+		[oled_w25qxx_PROC_GROUP0] 	= &&oled_w25qxx_PROC_GROUP0,
+		[oled_w25qxx_PROC_GROUP1] 	= &&oled_w25qxx_PROC_GROUP1,
+	};
+	static int pc = 0;
+	static int index = 100;
+	goto *function[pc];
+oled_w25qxx_PROC_GROUP0:
+	if( W25QXX_Read(&W25qx, OLED_Device.OLED_GRAM,index*1024,1024) == CORE_DONE){
+		pc = oled_w25qxx_PROC_GROUP1;
+		if( index >= 5000 ){	
+			index = 100;
+		}else{
+			index++;
+		}
+	}
+	return;
+oled_w25qxx_PROC_GROUP1:
+	if(OLED_Device.Gram(&OLED_Device) == 1){
+		pc = oled_w25qxx_PROC_GROUP0;
+	}
+	return;
+}
+
+
+int do_oled_w25q_tast(int argc,char *argv[])
+{
+	oled_w25qxx_task();
+	if( KeyboardInterrupt(&Shell_Device) == 1){
+		W25qx.Reset(&W25qx);
+		return CORE_DONE;
+	}
+	return CORE_RUNNING;
+}
+uint8_t ayy[8];
+int do_can1(int argc,char *argv[])
+{
+	ayy[0] = 0x42;
+	CAN_Standard_Send_Msg(&CAN1_BUS, 0x12,ayy,2);
 	return CORE_DONE;
 }
 
+int do_can2(int argc,char *argv[])
+{
+	ayy[0] = 0x41;
+	CAN_Extended_Send_Msg(&CAN1_BUS, 0x12,ayy,2);
+	return CORE_DONE;
+}
 
 void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
 {
@@ -3487,9 +2879,6 @@ void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
 	
 	cmd_list_create_node(led,"\r\nled - led dev mode",do_leds);
     cmd_list_linked_list_tail(led,Shell_Device->Shell_List_Header);
-	
-	cmd_list_create_node(dht11,"\r\ndht11 - data get PA1",do_dht11);
-	cmd_list_linked_list_tail(dht11,Shell_Device->Shell_List_Header);
 	
 	cmd_list_create_node(top,"\r\ntop - cpu memory usage",do_top);
 	cmd_list_linked_list_tail(top,Shell_Device->Shell_List_Header);
@@ -3524,33 +2913,24 @@ void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
 	cmd_list_create_node(ymodem,"\r\nymodem 0 irom flash and 1 spi flash and 2 eeprom",do_ymodem);
 	cmd_list_linked_list_tail(ymodem,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(encoder,"\r\nencoder - A=PB0,B=PB12",do_encoder);
-	cmd_list_linked_list_tail(encoder,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(gpioget,"\r\ngpioget - set gpio pin state",do_GPIOget);
+	cmd_list_linked_list_tail(gpioget,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(NEC,"\r\nNEC - NEC IR DECODE",do_NEC_IR);
-	cmd_list_linked_list_tail(NEC,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(gpioset,"\r\ngpioset - set gpio pin state",do_GPIOset);
+	cmd_list_linked_list_tail(gpioset,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(key,"\r\nkey - get key event",do_key);
-	cmd_list_linked_list_tail(key,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(w25qread,"\r\nw25qread - addr",do_w25q_read);
+	cmd_list_linked_list_tail(w25qread,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(hcsr04,"\r\nhcsr04 - get hcsr04 distance",do_HCSR04);
-	cmd_list_linked_list_tail(hcsr04,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(w25qwrite,"\r\nw25qwrite - addr data",do_w25q_write);
+	cmd_list_linked_list_tail(w25qwrite,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(servo,"\r\nservo - servo dev angle speed",do_servo);
-	cmd_list_linked_list_tail(servo,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(oledw25q,"\r\noledw25q - oledw25q tast",do_oled_w25q_tast);
+	cmd_list_linked_list_tail(oledw25q,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(ds18b20,"\r\nds18b20 - get ds18b20 temp",do_DS18B20);
-	cmd_list_linked_list_tail(ds18b20,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(can1,"\r\ncan - can",do_can1);
+	cmd_list_linked_list_tail(can1,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(pwm,"\r\npwm - set pwm duty",do_pwm);
-	cmd_list_linked_list_tail(pwm,Shell_Device->Shell_List_Header);
-	
-	cmd_list_create_node(GPIOget,"\r\nGPIOget - set GPIO Pin state",do_GPIOget);
-	cmd_list_linked_list_tail(GPIOget,Shell_Device->Shell_List_Header);
-	
-	cmd_list_create_node(GPIOset,"\r\nGPIOset - Get GPIO Pin state",do_GPIOset);
-	cmd_list_linked_list_tail(GPIOset,Shell_Device->Shell_List_Header);
-	
-	cmd_list_create_node(config,"\r\nGet - Get GPIO config",do_config);
-	cmd_list_linked_list_tail(config,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(can2,"\r\ncan - can",do_can2);
+	cmd_list_linked_list_tail(can2,Shell_Device->Shell_List_Header);
 }

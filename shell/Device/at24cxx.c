@@ -1,19 +1,16 @@
 #include "at24cxx.h"
 
 EEPROM_Driver_t EEPROM_Driver = {
-	.ID = AT24C256,
+	.BUS 		= I2C2_M_BITBANG,
+	.ID 		= AT24C256,
 	.OWN_ADDR = 0xA0,
 	.Read     = EEPROM_Read,
 	.Write    = EEPROM_PageWrite,
 	.Test     = AT24CXX_test,
-	.Init	  = EEPROM_Driver_Init,
 };
 
 
-void EEPROM_Driver_Init(EEPROM_Driver_t *EEPROM_Driver)
-{
-	EEPROM_Driver->I2C_Driver = &I2C_Master;
-}
+
 //页写函数,有自动翻页功能,24C64一页32Byte,num最大可写65523个字节
 uint8_t EEPROM_PageWrite(EEPROM_Driver_t *EEPROM_Driver, unsigned short address,unsigned char *pDat, unsigned short num)
 {
@@ -92,7 +89,7 @@ I2C_PAGEWRITE_INIT:
 	EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP1;
 	return CORE_RUNNING;
 I2C_PAGEWRITE_GROUP1:
-	if( i2c_open_dev(EEPROM_Driver->I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(EEPROM_Driver->BUS) == CORE_SUCCESS){
 		EEPROM_Driver->Write_Driver.TimerTick = 3;
 		EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP1_1;
 	}
@@ -100,16 +97,16 @@ I2C_PAGEWRITE_GROUP1:
 I2C_PAGEWRITE_GROUP1_1:
 	if( EEPROM_Driver->Write_Driver.TimerTick > 0){
 		EEPROM_Driver->Write_Driver.TimerTick--;
-		i2c_detect_addr_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR);
+		I2Cx_Detect(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR);
 		EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP1_2;
 	}else{
 		EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_ENDP;
 	}
 	return CORE_RUNNING;
 I2C_PAGEWRITE_GROUP1_2:	
-	if( i2c_write_read_endp(EEPROM_Driver->I2C_Driver) == CORE_DONE)
+	if( I2Cx_Endp(EEPROM_Driver->BUS) == CORE_DONE)
 	{
-		if( i2c_endp_result(EEPROM_Driver->I2C_Driver) == NO_ERROR){
+		if( I2Cx_Result(EEPROM_Driver->BUS) == NO_ERROR){
 			EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP2;
 		}else{
 			EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP1_1;
@@ -120,9 +117,9 @@ I2C_PAGEWRITE_GROUP2:
 	if(EEPROM_Driver->temp)//先填满写入地址的页
 	{
 		if( EEPROM_Driver->ID < AT24C04){
-			i2c_write_dev_reg_value_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 1, pDat, EEPROM_Driver->temp);
+			I2Cx_Set(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 1, pDat, EEPROM_Driver->temp);
 		}else{
-			i2c_write_dev_reg_value_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 2, pDat, EEPROM_Driver->temp);
+			I2Cx_Set(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 2, pDat, EEPROM_Driver->temp);
 		}
 		
 		EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP3;
@@ -131,7 +128,7 @@ I2C_PAGEWRITE_GROUP2:
 	}
 	return CORE_RUNNING;
 I2C_PAGEWRITE_GROUP3:			
-	if( i2c_write_read_endp(EEPROM_Driver->I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(EEPROM_Driver->BUS) == CORE_DONE){
 		EEPROM_Driver->Write_Driver.R6_Count = 5000;
 		EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP3_delay;
 	}
@@ -160,14 +157,14 @@ I2C_PAGEWRITE_GROUP5:
 	return CORE_RUNNING;
 I2C_PAGEWRITE_GROUP6:
 	if( EEPROM_Driver->ID < AT24C04){
-		i2c_write_dev_reg_value_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 1,pDat+EEPROM_Driver->temp, EEPROM_Driver->PAGE_BYTE);
+		I2Cx_Set(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 1,pDat+EEPROM_Driver->temp, EEPROM_Driver->PAGE_BYTE);
 	}else{
-		i2c_write_dev_reg_value_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 2,pDat+EEPROM_Driver->temp, EEPROM_Driver->PAGE_BYTE);
+		I2Cx_Set(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 2,pDat+EEPROM_Driver->temp, EEPROM_Driver->PAGE_BYTE);
 	}
 	EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP7;
 	return CORE_RUNNING;
 I2C_PAGEWRITE_GROUP7:	
-	if( i2c_write_read_endp(EEPROM_Driver->I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(EEPROM_Driver->BUS) == CORE_DONE){
 		EEPROM_Driver->addr += EEPROM_Driver->PAGE_BYTE;
 		EEPROM_Driver->temp += EEPROM_Driver->PAGE_BYTE;
 		EEPROM_Driver->Write_Driver.R1_Index++;
@@ -186,9 +183,9 @@ I2C_PAGEWRITE_GROUP8:
 	if(EEPROM_Driver->remainder)
 	{
 		if( EEPROM_Driver->ID < AT24C04){
-			i2c_write_dev_reg_value_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 1,pDat+EEPROM_Driver->temp, EEPROM_Driver->remainder);
+			I2Cx_Set(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 1,pDat+EEPROM_Driver->temp, EEPROM_Driver->remainder);
 		}else{
-			i2c_write_dev_reg_value_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 2,pDat+EEPROM_Driver->temp, EEPROM_Driver->remainder);
+			I2Cx_Set(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr, 2,pDat+EEPROM_Driver->temp, EEPROM_Driver->remainder);
 		}
 		EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP9;
 	}else{
@@ -196,7 +193,7 @@ I2C_PAGEWRITE_GROUP8:
 	}
 	return CORE_RUNNING;
 I2C_PAGEWRITE_GROUP9:
-	if( i2c_write_read_endp(EEPROM_Driver->I2C_Driver) == CORE_DONE){
+	if( I2Cx_Endp(EEPROM_Driver->BUS) == CORE_DONE){
 		EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_GROUP10;
 	}
 	return CORE_RUNNING;
@@ -204,7 +201,7 @@ I2C_PAGEWRITE_GROUP10:
 	EEPROM_Driver->Write_Driver.R15_PC = I2C_PAGEWRITE_ENDP;
 	return CORE_RUNNING;
 I2C_PAGEWRITE_ENDP:
-	i2c_close_dev(EEPROM_Driver->I2C_Driver);
+	I2Cx_Close(EEPROM_Driver->BUS);
 	EEPROM_Driver->Write_Driver.R15_PC = I2C_AT24CXX_PARAM;
 	return CORE_DONE;
 }
@@ -263,7 +260,7 @@ EEPROM_READ_INIT:
 	EEPROM_Driver->Read_Driver.R15_PC = EEPROM_READ_GROUP1;
 	return CORE_RUNNING;
 EEPROM_READ_GROUP1:
-	if( i2c_open_dev(EEPROM_Driver->I2C_Driver) == CORE_SUCCESS){
+	if( I2Cx_Open(EEPROM_Driver->BUS) == CORE_SUCCESS){
 		EEPROM_Driver->Read_Driver.R15_PC = EEPROM_READ_WAIT_1;
 		EEPROM_Driver->Read_Driver.TimerTick = 3;
 	}
@@ -271,18 +268,18 @@ EEPROM_READ_GROUP1:
 EEPROM_READ_WAIT_1:
 	if( EEPROM_Driver->Read_Driver.TimerTick > 0){
 		EEPROM_Driver->Read_Driver.TimerTick--;
-		i2c_detect_addr_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR);
+		I2Cx_Detect(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR);
 		EEPROM_Driver->Read_Driver.R15_PC = EEPROM_READ_WAIT_2;
 	}else{
-		i2c_close_dev(EEPROM_Driver->I2C_Driver);
+		I2Cx_Close(EEPROM_Driver->BUS);
 		EEPROM_Driver->Read_Driver.R15_PC = EEPROM_READ_PARAM;
 		return CORE_DONE;
 	}
 	return CORE_RUNNING;
 EEPROM_READ_WAIT_2:
-	if( i2c_write_read_endp(EEPROM_Driver->I2C_Driver) == CORE_DONE)
+	if( I2Cx_Endp(EEPROM_Driver->BUS) == CORE_DONE)
 	{
-		if( i2c_endp_result(EEPROM_Driver->I2C_Driver) == NO_ERROR){
+		if( I2Cx_Result(EEPROM_Driver->BUS) == NO_ERROR){
 			EEPROM_Driver->Read_Driver.R15_PC = EEPROM_READ_GROUP2;
 		}else{
 			EEPROM_Driver->Read_Driver.R15_PC = EEPROM_READ_WAIT_1;
@@ -291,15 +288,15 @@ EEPROM_READ_WAIT_2:
 	return CORE_RUNNING;
 EEPROM_READ_GROUP2:
 	if( EEPROM_Driver->ID < AT24C04){
-		i2c_read_dev_reg_value_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr,1, pDat, num);
+		I2Cx_Get(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr,1, pDat, num);
 	}else{
-		i2c_read_dev_reg_value_proc(EEPROM_Driver->I2C_Driver, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr,2, pDat, num);
+		I2Cx_Get(EEPROM_Driver->BUS, EEPROM_Driver->OWN_ADDR, EEPROM_Driver->addr,2, pDat, num);
 	}
 	EEPROM_Driver->Read_Driver.R15_PC = EEPROM_READ_GROUP3;
 	return CORE_RUNNING;
 EEPROM_READ_GROUP3:			
-	if( i2c_write_read_endp(EEPROM_Driver->I2C_Driver) == CORE_DONE){
-		i2c_close_dev(EEPROM_Driver->I2C_Driver);
+	if( I2Cx_Endp(EEPROM_Driver->BUS) == CORE_DONE){
+		I2Cx_Result(EEPROM_Driver->BUS);
 		EEPROM_Driver->Read_Driver.R15_PC = EEPROM_READ_PARAM;
 		return CORE_DONE;
 	}
