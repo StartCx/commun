@@ -135,7 +135,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGTARM</Key>
-          <Name>(1010=-1,-1,-1,-1,0)(1007=-1,-1,-1,-1,0)(1008=-1,-1,-1,-1,0)(1009=-1,-1,-1,-1,0)</Name>
+          <Name>(1010=919,114,1369,671,0)(1007=105,137,292,412,0)(1008=-1,-1,-1,-1,0)(1009=-1,-1,-1,-1,0)</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -154,7 +154,7 @@
           <Type>0</Type>
           <LineNumber>483</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134254660</Address>
+          <Address>134255700</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -170,12 +170,12 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>I2C1_Master,0x10</ItemText>
+          <ItemText>SIM_UART</ItemText>
         </Ww>
         <Ww>
           <count>1</count>
           <WinNumber>1</WinNumber>
-          <ItemText>((CAN_TypeDef *) (((uint32_t)0x40000000) + 0x6400))</ItemText>
+          <ItemText>Shell_Device,0x0A</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>

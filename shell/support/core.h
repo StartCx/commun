@@ -35,19 +35,21 @@ enum
 {
 	CORE_RUNNING = 0,
 	CORE_DONE    = 1,
-	CORE_READY   = 2,
-	CORE_BUSY    = 3,
-	CORE_SUCCESS = 4,
-	CORE_ERROR	 = 5,
-	CORE_LOCK	 = 6,//上锁
-	CORE_UNLOCK	 = 7,//解锁
-	CORE_OK	 	 = 8,
-	CORE_TIMEOUT = 9,
-	CORE_ABORT 	 = 10,
-	CORE_EXIT 	 = 11,
-	CORE_SET 	 = 12,
-	CORE_SET_DONE= 13,
+	CORE_IDLE    = 2,
+	CORE_READY   = 3,
+	CORE_BUSY    = 4,
+	CORE_SUCCESS = 5,
+	CORE_ERROR	 = 6,
+	CORE_LOCK	 = 7,//上锁
+	CORE_UNLOCK	 = 8,//解锁
+	CORE_OK	 	 = 9,
+	CORE_TIMEOUT = 10,
+	CORE_ABORT 	 = 11,
+	CORE_EXIT 	 = 12,
+	CORE_SET 	 = 13,
+	CORE_SET_DONE= 14,
 };
+
 
 extern uint32_t get_init_fp(void);
 

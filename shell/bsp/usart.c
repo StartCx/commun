@@ -39,14 +39,12 @@ void Usart1_Init(u32 bound)
 	USART_Init(USART1, &USART_InitStructure);
 	
 	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-	
 	USART_Cmd(USART1, ENABLE);
-	
 	//USART1 INT Cofig
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
 	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 

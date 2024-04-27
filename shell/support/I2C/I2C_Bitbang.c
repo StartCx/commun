@@ -581,7 +581,7 @@ void I2C_S_Bitbang_Config(I2C_S_Bitbang_t *I2C_Driver)
 	GPIO_SET_HIGH(I2C_Driver->PORT_SDA, I2C_Driver->PIN_SDA);
 	
 	for(int i = 0; i < 256;i++){
-		I2C_Driver->Array_Reg[i] = i;
+		I2C_Driver->Array_Reg[i] = 255-i;
 	}
 }
 

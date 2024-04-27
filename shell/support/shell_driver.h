@@ -8,6 +8,12 @@
 #include "queue.h"
 #include "usart.h"
 #include "static_lib.h"
+#include "simulated_uart.h"
+typedef enum
+{
+	USART1_BUS,
+	SIMUL1_BUS,
+}Usart_Bus_e;
 
 
 enum
@@ -137,6 +143,7 @@ typedef struct
 typedef struct Shell_Device_Class_t
 {
 	// Ù–‘
+	uint8_t 			Bus;
 	USART_TypeDef 		*USARTx;
 	struct list_head 	Shell_List_Header;
 	Queue512_t 			Shell_Print_Queue;
@@ -148,8 +155,9 @@ typedef struct Shell_Device_Class_t
 	
 	CPU_RegisterClass_t Shell_putchar;
 	Timer_t				Timer;
+	SIM_UART_Driver_t *SIM_UART_Driver;
 	//∑Ω∑®
-	void (*Init)(struct Shell_Device_Class_t *Shell);
+	void (*Init)(struct Shell_Device_Class_t *Shell, Usart_Bus_e Bus);
 	void (*Get)(struct Shell_Device_Class_t *Shell);
 	void (*Put)(struct Shell_Device_Class_t *Shell);
 	void (*Driver)(struct Shell_Device_Class_t *Shell);
@@ -159,6 +167,8 @@ extern Shell_Device_Class_t Shell_Device;
 
 void shell_Driver(Shell_Device_Class_t *Shell);
 void shell_Putchar(Shell_Device_Class_t *Shell);
+void shell_SIM_Uart_Putchar(Shell_Device_Class_t *Shell);
+void shell_SIM_Uart_Getchar(Shell_Device_Class_t *Shell);
 void shell_Getchar(Shell_Device_Class_t *Shell);
 void shell_Getchar_IT(Shell_Device_Class_t *Shell);
 extern char KeyboardInterrupt(Shell_Device_Class_t *Shell);

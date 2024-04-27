@@ -1707,6 +1707,9 @@ I2C_READ_PROC_GROUP12:
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP22;
 	}else{
 		Shell_Task.Value_Length = sscanf_driver.Register.R0_Result;
+		if( Shell_Task.Value_Length > 256){
+			Shell_Task.Value_Length = 256;
+		}
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP13;
 	}
 	return CORE_RUNNING;
@@ -2864,10 +2867,20 @@ int do_can2(int argc,char *argv[])
 	return CORE_DONE;
 }
 
-void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
+void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device, Usart_Bus_e Bus)
 {
 //方括号[]表示可选参数
 //尖括号<>表示必选参数
+	Shell_Device->Bus = Bus;
+	if( Shell_Device->Bus == USART1_BUS){
+		Shell_Device->USARTx= USART1;
+		Shell_Device->Get  	= shell_Getchar_IT;
+		Shell_Device->Put  	= shell_Putchar;
+	}else if( Shell_Device->Bus == SIMUL1_BUS){
+		Shell_Device->SIM_UART_Driver = &SIM_UART;
+		Shell_Device->Get  	= shell_SIM_Uart_Getchar;
+		Shell_Device->Put  	= shell_SIM_Uart_Putchar;
+	}
 	
 	INIT_LIST_HEAD(&Shell_Device->Shell_List_Header);
 	
@@ -2913,10 +2926,10 @@ void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
 	cmd_list_create_node(ymodem,"\r\nymodem 0 irom flash and 1 spi flash and 2 eeprom",do_ymodem);
 	cmd_list_linked_list_tail(ymodem,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(gpioget,"\r\ngpioget - set gpio pin state",do_GPIOget);
+	cmd_list_create_node(gpioget,"\r\ngpioget - get gpio pin state e.g. gpioget A",do_GPIOget);
 	cmd_list_linked_list_tail(gpioget,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(gpioset,"\r\ngpioset - set gpio pin state",do_GPIOset);
+	cmd_list_create_node(gpioset,"\r\ngpioset - set gpio pin state e.g. gpioset A 1",do_GPIOset);
 	cmd_list_linked_list_tail(gpioset,Shell_Device->Shell_List_Header);
 	
 	cmd_list_create_node(w25qread,"\r\nw25qread - addr",do_w25q_read);
@@ -2928,9 +2941,9 @@ void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device)
 	cmd_list_create_node(oledw25q,"\r\noledw25q - oledw25q tast",do_oled_w25q_tast);
 	cmd_list_linked_list_tail(oledw25q,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(can1,"\r\ncan - can",do_can1);
+	cmd_list_create_node(can1,"\r\ncan1 - std",do_can1);
 	cmd_list_linked_list_tail(can1,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(can2,"\r\ncan - can",do_can2);
+	cmd_list_create_node(can2,"\r\ncan2 - exd",do_can2);
 	cmd_list_linked_list_tail(can2,Shell_Device->Shell_List_Header);
 }

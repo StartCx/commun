@@ -1,10 +1,9 @@
 #include "shell_driver.h"
 
 
-extern void shell_Cmd_Init(Shell_Device_Class_t *Shell);
+extern void shell_Cmd_Init(Shell_Device_Class_t *Shell, Usart_Bus_e Bus);
 
 Shell_Device_Class_t Shell_Device = {
-	.USARTx	= USART1,
 	.Shell_Driver = {
 		.Register.R12_Lock = CORE_UNLOCK,
 		.Register.R4_Status = SHELL_ARROW_KEYS_DETECT_GROUP0,
@@ -13,8 +12,6 @@ Shell_Device_Class_t Shell_Device = {
 		.TickPeroid = 20,
 	},
 	.Init 	= shell_Cmd_Init,
-	.Get  	= shell_Getchar_IT,
-	.Put  	= shell_Putchar,
 	.Driver = shell_Driver,
 };
 
@@ -551,7 +548,6 @@ SHELL_LIST_EACH_ENTRY_GROUP3://max 4us
 	}
 	return;
 SHELL_STRCMP_PROC_ENDP_GROUP:
-	
 SHELL_STRCPY_PROC_ENDP_GROUP:
 	string_copy(&Shell->Shell_Strcpy, &Shell->Shell_Driver.Shell_Stack.buf[0], &Shell->Shell_Driver.hist_Stack[Shell->Shell_Driver.hist_Cur_IDX].buf[0]);
 	if( Shell->Shell_Strcpy.Register.R15_PC == CALL_STRCPY_PROC_ENDP){
@@ -649,7 +645,42 @@ PUTCHAR_PROCESS_DATA:
 	return;
 }
 
+void shell_SIM_Uart_Putchar(Shell_Device_Class_t *Shell)
+{
+	enum
+	{
+		PUTCHAR_GET_QUEUE_DATA = 0,
+		PUTCHAR_WAIT_FLAG_RESET,
+		PUTCHAR_PROCESS_DATA,
+		PUTCHAR_SUM,
+	};
+	static const void *function[PUTCHAR_SUM] = {
+		[PUTCHAR_GET_QUEUE_DATA] = &&PUTCHAR_GET_QUEUE_DATA,
+		[PUTCHAR_WAIT_FLAG_RESET]= &&PUTCHAR_WAIT_FLAG_RESET,
+		[PUTCHAR_PROCESS_DATA]   = &&PUTCHAR_PROCESS_DATA,
+	};
+	goto *function[Shell->Shell_putchar.R15_PC];
+PUTCHAR_GET_QUEUE_DATA:
+	if( QueueDataOut(&(Shell->Shell_Print_Queue), &Shell->Shell_putchar.R3_cout)){
+		Shell->Shell_putchar.R15_PC = PUTCHAR_WAIT_FLAG_RESET;
+	}
+	return;
+PUTCHAR_WAIT_FLAG_RESET:
+	if( SIM_UART_GetFlagStatus( Shell->SIM_UART_Driver, SIM_USART_TX_STATE) == CORE_IDLE){
+		Shell->Shell_putchar.R15_PC = PUTCHAR_PROCESS_DATA;
+	}
+	return;
+PUTCHAR_PROCESS_DATA:
+	SIM_USART_SendData( Shell->SIM_UART_Driver, Shell->Shell_putchar.R3_cout);
+	Shell->Shell_putchar.R15_PC = PUTCHAR_GET_QUEUE_DATA;
+	return;
+}
 
+//获取数据
+void shell_SIM_Uart_Getchar(Shell_Device_Class_t *Shell)
+{
+	QueueDataIn(&Shell_Device.Shell_Driver.Shell_Queue, &SIM_UART.Rx_Data);
+}
 
 //获取数据
 void shell_Getchar(Shell_Device_Class_t *Shell)
@@ -664,6 +695,7 @@ void shell_Getchar(Shell_Device_Class_t *Shell)
 //中断获取
 void shell_Getchar_IT(Shell_Device_Class_t *Shell)
 {
+	
 	if(USART_GetITStatus(Shell->USARTx,USART_IT_RXNE) != RESET)
 	{							
 		uint8_t temp = USART_ReceiveData(Shell->USARTx);

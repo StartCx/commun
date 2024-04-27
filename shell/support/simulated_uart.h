@@ -4,6 +4,13 @@
 
 #include "core.h"
 
+
+typedef enum
+{
+	SIM_USART_RX_STATE,
+	SIM_USART_TX_STATE,
+}Sim_Uart_State;
+
 typedef struct SIM_UART_Driver_t
 {
 	uint16_t Tx_num;
@@ -23,10 +30,19 @@ typedef struct SIM_UART_Driver_t
 	CPU_RegisterClass_t Rx_Register;
 }SIM_UART_Driver_t;
 
-extern SIM_UART_Driver_t SIM_UART_Driver;
+extern SIM_UART_Driver_t SIM_UART;
+extern void SIM_Uart_Init(SIM_UART_Driver_t *SIM_UART_Driver);
+void SIM_USART_SendData(SIM_UART_Driver_t *SIM_UART_Driver, uint8_t ch);
+void SIM_Uart_SendByte( SIM_UART_Driver_t *SIM_UART_Driver, uint8_t ch);
+extern void SIM_Uart_SendArray(SIM_UART_Driver_t *SIM_UART_Driver, uint8_t *pDat, uint16_t num);
+extern void SIM_Uart_Tx_Peripheral(SIM_UART_Driver_t *SIM_UART_Driver);	
+extern uint8_t SIM_Uart_Rx_Peripheral(SIM_UART_Driver_t *SIM_UART_Driver);			
+extern void SIM_Uart_Rx_IRQHandler(SIM_UART_Driver_t *SIM_UART_Driver);
 
-uint8_t Simul_Uart_Tx(SIM_UART_Driver_t *SIM_UART_Driver, uint8_t *pDat, uint16_t num);		//模拟串口发送
-uint8_t Simul_Uart_Rx(SIM_UART_Driver_t *SIM_UART_Driver);					//模拟串口接收
+extern uint8_t SIM_UART_GetFlagStatus(SIM_UART_Driver_t *SIM_UART_Driver, Sim_Uart_State State);
+extern void SIM_UART_SetFlagStatus(SIM_UART_Driver_t *SIM_UART_Driver, Sim_Uart_State State, uint8_t value);
+
+extern void SIM_Uart_Rx_IRQHandler(SIM_UART_Driver_t *SIM_UART_Driver);
 
 
 #endif 

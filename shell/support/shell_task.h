@@ -47,10 +47,7 @@ typedef struct
 
 
 extern Shell_Device_Class_t Shell_Device;
-
-
-
-extern void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device);
+extern void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device, Usart_Bus_e Bus);
 
 
 #endif
