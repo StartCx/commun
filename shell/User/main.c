@@ -10,8 +10,6 @@
 #include "can.h"
 #include "simulated_uart.h"
 
-int flag = 0;
-
 
 int main(void)
 {	
@@ -27,12 +25,12 @@ int main(void)
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_CAN1, ENABLE);
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 	
-	CAN1_Configuration();		//PA11， PA12
-	Usart1_Init(50000);			//PA9 ， PA10
-	SIM_Uart_Init(&SIM_UART);	//PA2 ， PA3 波特率 100k
+	CAN1_Configuration();		//PA11， PA12 		250k	优先级 2，0
+	Usart1_Init(50000);			//PA9 ， PA10		50k 	优先级 1，0
+	SIM_Uart_Init(&SIM_UART);	//PA2 ， PA3 波特率 50k
 
 	Led_Device.Init(&Led_Device);//PC13
-	I2Cx_Init(I2C1_M_HARDWARE);	//SCL PB6 ， SDA PB7 	100k
+	I2Cx_Init(I2C1_M_HARDWARE);	//SCL PB6 ， SDA PB7 	50k
 	I2Cx_Init(I2C2_M_BITBANG);	//SCL PB10， SDA PB11	50k
 	I2Cx_Init(I2C3_M_SOFTWARE);	//SCL PB8 ， SDA PB9	100k+
 	I2Cx_Init(I2C4_S_BITBANG);	//SCL PB4 ， SDA PB5	50k
@@ -41,7 +39,7 @@ int main(void)
 	SPIx_Init(SPI2_M_BITBANG); 	//SCK PB13, MISO PB14, MOSI PB15, CS0 PB12, CS1 PA8;
 	SPIx_Init(SPI3_M_SOFTWARE);	//SCK PC14, MISO PC15, MOSI PA4,  CS0 PB3,  CS1 PA15;
 	ADC_Configuration();		//PA0，PA1
-	TIM4_Configuration();
+	TIM4_Configuration();		//优先级 0，0
 	Shell_Device.Init(&Shell_Device, SIMUL1_BUS);
 	
 	while(1)
@@ -57,21 +55,7 @@ int main(void)
 			Shell_Device.Driver(&Shell_Device);
 			Shell_Device.Put(&Shell_Device);
 		}
-		if( flag == 1){
-			flag = 0;
-			if(CAN1_BUS.RX_Message.IDE == CAN_ID_STD){
-				printf("Recv: StdId=0x%x,",CAN1_BUS.RX_Message.StdId);
-			}else{
-				printf("Recv: ExtId=0x%x,",CAN1_BUS.RX_Message.ExtId);
-			}
-			printf("RTR=%d,",CAN1_BUS.RX_Message.RTR);
-			printf("DLC=%d,Data:",CAN1_BUS.RX_Message.DLC);
-			
-			for(int i = 0; i<8;i++){
-				printf("0x%x ",CAN1_BUS.RX_Message.Data[i]);
-			}
-			printf("\r\n");
-		}
+		CAN_Recv_To_UART_Send();
 		Stop_CPU(10);
 	}
 }
@@ -121,8 +105,20 @@ void USB_LP_CAN1_RX0_IRQHandler()
 	{
 		CAN_ClearITPendingBit(CAN1_BUS.CANx,CAN_IT_FMP0); 
 		CAN_Receive(CAN1_BUS.CANx,CAN_FIFO0,&CAN1_BUS.RX_Message);
-		flag = 1;
+		CAN1_BUS.RX_Flag = 1;
 	}
-	
 }
+
+//重定义fputc函数 
+int fputc(int ch, FILE *f)
+{    
+#if 0
+	while((USART1->SR & USART_FLAG_TXE) == RESET);	
+	USART_SendData(USART1, (uint8_t) ch);
+#else
+	SIM_Uart_SendByte( &SIM_UART, ch);
+#endif
+	return (ch);
+}
+
 

@@ -1,11 +1,6 @@
 #include "shell_task.h"
 
 static Shell_Cmd_Task_t Shell_Task;
-static sscanf_t sscanf_driver;
-static fmt_t fmt_driver;
-extern Shell_Device_Class_t Shell_Device;
-
-/******************************************************led****************************************************/
 
 
 
@@ -34,22 +29,22 @@ CLEAR_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 CLEAR_PROC_GROUP1:	
-	string_printf(&fmt_driver, " \x1b[H\x1b[J");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, " \x1b[H\x1b[J");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = CLEAR_PROC_GROUP3;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 CLEAR_PROC_GROUP2:	
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = CLEAR_PROC_GROUP3;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 CLEAR_PROC_GROUP3:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = CLEAR_PROC_GROUP0;
@@ -89,8 +84,8 @@ HELP_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 HELP_PROC_GROUP1:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = HELP_PROC_GROUP5;
 		Shell_Task.Register.R1_Index = 0;
 	}
@@ -117,8 +112,8 @@ HELP_PROC_GROUP4:
 	Shell_Task.Register.R15_PC = HELP_PROC_GROUP2;
 	return CORE_RUNNING;
 HELP_PROC_GROUP5:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = HELP_PROC_GROUP0;
@@ -170,17 +165,17 @@ LED_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 LED_PROC_GROUP1:
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = LED_PROC_GROUP2;
 	}
 	return CORE_RUNNING;
 LED_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = LED_PROC_GROUP10;
 	}else{
 		
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = LED_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
@@ -193,16 +188,16 @@ LED_PROC_GROUP3:
 	}
 	return CORE_RUNNING;
 LED_PROC_GROUP4:
-	string_scanf(&sscanf_driver,argv[2]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver,argv[2]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = LED_PROC_GROUP5;
 	}
 	return CORE_RUNNING;
 LED_PROC_GROUP5:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = LED_PROC_GROUP10;
 	}else{
-		Shell_Task.Register.R4_Status = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R4_Status = Shell_Task.sscanf_driver.Register.R0_Result;
 		if( Shell_Task.Register.R4_Status >= GPIO_MODE_SUM){
 			Shell_Task.Register.R15_PC = LED_PROC_GROUP10;
 		}else{
@@ -215,11 +210,11 @@ LED_PROC_GROUP6:
 	Shell_Task.Register.R15_PC = LED_PROC_GROUP7;
 	return CORE_RUNNING;
 LED_PROC_GROUP7:
-	string_printf(&fmt_driver, "\r\n## LED %d set to Mode %d\r\n", Shell_Task.Register.R5_Object, sscanf_driver.Register.R0_Result);
+	string_printf(&Shell_Task.fmt_driver, "\r\n## LED %d set to Mode %d\r\n", Shell_Task.Register.R5_Object, Shell_Task.sscanf_driver.Register.R0_Result);
 	Shell_Task.Register.R15_PC = LED_PROC_GROUP7_1;
 	return CORE_RUNNING;
 LED_PROC_GROUP7_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = LED_PROC_GROUP9;
 		Shell_Task.Register.R1_Index = 0;
 	}else{
@@ -227,11 +222,11 @@ LED_PROC_GROUP7_1:
 	}
 	return CORE_RUNNING;
 LED_PROC_GROUP8:
-	string_printf(&fmt_driver, "\r\n## Error: LED %d set to Mode %d\r\n", Shell_Task.Register.R5_Object, sscanf_driver.Register.R0_Result);
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: LED %d set to Mode %d\r\n", Shell_Task.Register.R5_Object, Shell_Task.sscanf_driver.Register.R0_Result);
 	Shell_Task.Register.R15_PC = LED_PROC_GROUP8_1;
 	return CORE_RUNNING;
 LED_PROC_GROUP8_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = LED_PROC_GROUP9;
 		Shell_Task.Register.R1_Index = 0;
 	}else{
@@ -239,8 +234,8 @@ LED_PROC_GROUP8_1:
 	}
 	return CORE_RUNNING;
 LED_PROC_GROUP9:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = LED_PROC_GROUP0;
@@ -248,8 +243,8 @@ LED_PROC_GROUP9:
 	}
 	return CORE_RUNNING;
 LED_PROC_GROUP10:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = LED_PROC_GROUP9;
 		Shell_Task.Register.R1_Index = 0;
 	}
@@ -285,8 +280,8 @@ TOP_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 TOP_PROC_GROUP1:
-	string_printf(&fmt_driver, "\r\n\r\n## cpu   : Max = %06d0 us | cur = %06d0 us | period = %07d us.\r\n",Cur_Usage_Max_Cpu, Cur_Usage_Cpu, 100);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n\r\n## cpu   : Max = %06d0 us | cur = %06d0 us | period = %07d us.\r\n",Cur_Usage_Max_Cpu, Cur_Usage_Cpu, 100);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = TOP_PROC_GROUP3;
 		Shell_Task.Register.R14_LR = TOP_PROC_GROUP4;
 		Shell_Task.Register.R1_Index = 0;
@@ -296,24 +291,24 @@ TOP_PROC_GROUP1_1:
 	Shell_Task.Register.R15_PC = TOP_PROC_GROUP0;
 	return CORE_DONE;
 TOP_PROC_GROUP2:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = TOP_PROC_GROUP3;
 		Shell_Task.Register.R14_LR = TOP_PROC_GROUP1_1;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 TOP_PROC_GROUP3:	
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
 	}
 	return CORE_RUNNING;
 TOP_PROC_GROUP4:
-	string_printf(&fmt_driver, "## stack : top = 0x%x | cur = 0x%x | bottom = 0x%x.\r\n",stack_top_addr, stack_top_sp, stack_bottom_fp);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "## stack : top = 0x%x | cur = 0x%x | bottom = 0x%x.\r\n",stack_top_addr, stack_top_sp, stack_bottom_fp);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = TOP_PROC_GROUP3;
 		Shell_Task.Register.R14_LR = TOP_PROC_GROUP1_1;
 		Shell_Task.Register.R1_Index = 0;
@@ -380,16 +375,16 @@ I2C_DETECT_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP0_1:
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP0_2;
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP0_2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP0_3;
 	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP0_2_1;
 	}
 	return CORE_RUNNING;
@@ -402,15 +397,15 @@ I2C_DETECT_PROC_GROUP0_2_1:
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP0_3:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP0_4;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP0_4:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP0;
@@ -429,8 +424,8 @@ I2C_DETECT_PROC_GROUP1:
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP1_ERROR:
-	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DETECT_PROC_GROUP9;
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP7;
 		Shell_Task.Register.R1_Index = 0;
@@ -457,24 +452,24 @@ I2C_DETECT_PROC_GROUP4:
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP5:
-	string_printf(&fmt_driver, "\r\n## i2cdetect addr=0x%2x online ", Shell_Task.Dev_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## i2cdetect addr=0x%2x online ", Shell_Task.Dev_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DETECT_PROC_GROUP8;
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP7;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP6:
-	string_printf(&fmt_driver, "\r\n## i2cdetect addr=0x%2x offline", Shell_Task.Dev_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## i2cdetect addr=0x%2x offline", Shell_Task.Dev_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DETECT_PROC_GROUP8;
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP7;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_DETECT_PROC_GROUP7:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -492,8 +487,8 @@ I2C_DETECT_PROC_GROUP9:
 	Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP0;
 	return CORE_DONE;
 I2C_DETECT_PROC_GROUP10:
-	string_printf(&fmt_driver, "\r\n## Error: i2c bus error\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: i2c bus error\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DETECT_PROC_GROUP9;
 		Shell_Task.Register.R15_PC = I2C_DETECT_PROC_GROUP7;
 		Shell_Task.Register.R1_Index = 0;
@@ -568,16 +563,16 @@ I2C_DUMP_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP0_1:	
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP0_2;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP0_2:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP13;
 	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP0_2_1;
 	}
 	return CORE_RUNNING;
@@ -590,26 +585,26 @@ I2C_DUMP_PROC_GROUP0_2_1:
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP0_3:
 	Shell_Task.Reg_Addr = 0x00;
-	sscanf_driver.str = argv[2];
+	Shell_Task.sscanf_driver.str = argv[2];
 	Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP1;
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP1:
-	string_scanf(&sscanf_driver, argv[2]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[2]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP2;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP13;
 	}else{
-		Shell_Task.Dev_Addr = sscanf_driver.Register.R0_Result;
+		Shell_Task.Dev_Addr = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP3:
-	string_printf(&fmt_driver, "\r\n## i2cdump: bus%d dev_addr=0x%2x Loading...\r\n\r\n", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## i2cdump: bus%d dev_addr=0x%2x Loading...\r\n\r\n", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP5;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
 		Shell_Task.Register.retry  = 1000;
@@ -617,8 +612,8 @@ I2C_DUMP_PROC_GROUP3:
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP4:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -636,8 +631,8 @@ I2C_DUMP_PROC_GROUP5:
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP5_ERROR:
-	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP12;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
 		Shell_Task.Register.R1_Index = 0;
@@ -662,8 +657,8 @@ I2C_DUMP_PROC_GROUP8:
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP9:
-	string_printf(&fmt_driver, "## i2cdump: reg=0x%2x val=0x%2x\r\n", Shell_Task.Reg_Addr, Shell_Task.Reg_Value[0]);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "## i2cdump: reg=0x%2x val=0x%2x\r\n", Shell_Task.Reg_Addr, Shell_Task.Reg_Value[0]);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP11;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
 		Shell_Task.Register.R1_Index = 0;
@@ -702,40 +697,40 @@ I2C_DUMP_PROC_GROUP12:
 	Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP0;
 	return CORE_DONE;
 I2C_DUMP_PROC_GROUP13:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP12;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP14:
-	string_printf(&fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP12;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP15:
-	string_printf(&fmt_driver, "\r\n## Error: reg=0x%2x REG_ADDR_NO_ACK\r\n", Shell_Task.Reg_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: reg=0x%2x REG_ADDR_NO_ACK\r\n", Shell_Task.Reg_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP11;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP16:
-	string_printf(&fmt_driver, "\r\n## Error: reg=0x%2x WR_VALUE_NO_ACK\r\n", Shell_Task.Reg_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: reg=0x%2x WR_VALUE_NO_ACK\r\n", Shell_Task.Reg_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP11;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_DUMP_PROC_GROUP17:
-	string_printf(&fmt_driver, "\r\n## Error: i2c bus error\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: i2c bus error\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_DUMP_PROC_GROUP11;
 		Shell_Task.Register.R15_PC = I2C_DUMP_PROC_GROUP4;
 		Shell_Task.Register.R1_Index = 0;
@@ -821,8 +816,8 @@ int do_i2cget(int argc,char *argv[])
 	goto *function[Shell_Task.Register.R15_PC];
 I2C_GET_PROC_GROUP0:
 	if(argc == 6){
-		string_scanf(&sscanf_driver, argv[1]);
-		if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+		if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 			Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP2;
 		}
 	}else{
@@ -830,10 +825,10 @@ I2C_GET_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP22;
 	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
@@ -845,64 +840,64 @@ I2C_GET_PROC_GROUP3:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP4:
-	string_scanf(&sscanf_driver, argv[2]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[2]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP6;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP6:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP22;
 	}else{
-		Shell_Task.Dev_Addr = sscanf_driver.Register.R0_Result;
+		Shell_Task.Dev_Addr = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP7;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP7:
-	string_scanf(&sscanf_driver, argv[3]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[3]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP9;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP9:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP22;
 	}else{
-		Shell_Task.Reg_Addr = sscanf_driver.Register.R0_Result;
+		Shell_Task.Reg_Addr = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP10;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP10:
-	string_scanf(&sscanf_driver, argv[4]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[4]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP12;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP12:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP22;
 	}else{
-		Shell_Task.Reg_Size = sscanf_driver.Register.R0_Result;
+		Shell_Task.Reg_Size = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP10_Extra;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP10_Extra:
-	string_scanf(&sscanf_driver, argv[5]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[5]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP12_Extra;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP12_Extra:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP22;
 	}else{
-		Shell_Task.Value_Length = sscanf_driver.Register.R0_Result;
+		Shell_Task.Value_Length = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP13;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP13:
-	string_printf(&fmt_driver, "\r\n## I2cget: bus%d dev=0x%2x reg=0x%2x reg_len = %d read_len=%d", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr, Shell_Task.Reg_Size, Shell_Task.Value_Length);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## I2cget: bus%d dev=0x%2x reg=0x%2x reg_len = %d read_len=%d", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr, Shell_Task.Reg_Size, Shell_Task.Value_Length);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP15;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP14;
 		Shell_Task.Register.retry  = 1000;
@@ -910,8 +905,8 @@ I2C_GET_PROC_GROUP13:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP14:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -929,8 +924,8 @@ I2C_GET_PROC_GROUP15:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP15_ERROR:
-	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -955,8 +950,8 @@ I2C_GET_PROC_GROUP18:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP19:
-	string_printf(&fmt_driver, "\r\n loading...\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n loading...\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R6_Count = 0;
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP20_1;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
@@ -964,8 +959,8 @@ I2C_GET_PROC_GROUP19:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP20:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -983,8 +978,8 @@ I2C_GET_PROC_GROUP20_1:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP20_2:
-	string_printf(&fmt_driver, "0x%2x ",Shell_Task.Reg_Value[Shell_Task.Register.R6_Count]);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "0x%2x ",Shell_Task.Reg_Value[Shell_Task.Register.R6_Count]);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP20_1;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
 		Shell_Task.Register.R6_Count++;
@@ -992,8 +987,8 @@ I2C_GET_PROC_GROUP20_2:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP20_3:
-	string_printf(&fmt_driver, "\r\n[0x%2x]-> ",Shell_Task.Reg_Addr+Shell_Task.Register.R6_Count);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n[0x%2x]-> ",Shell_Task.Reg_Addr+Shell_Task.Register.R6_Count);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP20_2;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1003,8 +998,8 @@ I2C_GET_PROC_GROUP21:
 	Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP0;
 	return CORE_DONE;
 I2C_GET_PROC_GROUP22:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1022,32 +1017,32 @@ I2C_GET_PROC_GROUP23:
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP24:
-	string_printf(&fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP25:
-	string_printf(&fmt_driver, "\r\n## Error: reg=0x%2x REG_ADDR_NO_ACK\r\n", Shell_Task.Reg_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: reg=0x%2x REG_ADDR_NO_ACK\r\n", Shell_Task.Reg_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP26:
-	string_printf(&fmt_driver, "\r\n## Error: reg=0x%2x WR_VALUE_NO_ACK\r\n", Shell_Task.Reg_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: reg=0x%2x WR_VALUE_NO_ACK\r\n", Shell_Task.Reg_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_GET_PROC_GROUP27:
-	string_printf(&fmt_driver, "\r\n## Error: i2c bus error\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: i2c bus error\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_GET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_GET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1124,8 +1119,8 @@ int do_i2cset(int argc,char *argv[])
 	goto *function[Shell_Task.Register.R15_PC];
 I2C_SET_PROC_GROUP0:
 	if(argc == 6){
-		string_scanf(&sscanf_driver, argv[1]);
-		if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+		if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 			Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP2;
 		}
 		return CORE_RUNNING;
@@ -1134,10 +1129,10 @@ I2C_SET_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP22;
 	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
@@ -1149,64 +1144,64 @@ I2C_SET_PROC_GROUP3:
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP4:
-	string_scanf(&sscanf_driver, argv[2]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[2]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP6;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP6:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP22;
 	}else{
-		Shell_Task.Dev_Addr = sscanf_driver.Register.R0_Result;
+		Shell_Task.Dev_Addr = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP7;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP7:
-	string_scanf(&sscanf_driver, argv[3]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[3]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP9;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP9:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP22;
 	}else{
-		Shell_Task.Reg_Addr = sscanf_driver.Register.R0_Result;
+		Shell_Task.Reg_Addr = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP10;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP10:
-	string_scanf(&sscanf_driver, argv[4]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[4]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP12;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP12:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP22;
 	}else{
-		Shell_Task.Reg_Size = sscanf_driver.Register.R0_Result;
+		Shell_Task.Reg_Size = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP10_Extra;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP10_Extra:
-	string_scanf(&sscanf_driver, argv[5]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[5]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP12_Extra;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP12_Extra:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP22;
 	}else{
-		Shell_Task.Reg_Value[0] = sscanf_driver.Register.R0_Result;
+		Shell_Task.Reg_Value[0] = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP13;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP13:
-	string_printf(&fmt_driver, "\r\n## i2cset: bus%d dev=0x%2x reg=0x%2x reg_len = %d, val=0x%2x\r\n", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr,Shell_Task.Reg_Size, Shell_Task.Reg_Value[0]);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## i2cset: bus%d dev=0x%2x reg=0x%2x reg_len = %d, val=0x%2x\r\n", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, Shell_Task.Reg_Addr,Shell_Task.Reg_Size, Shell_Task.Reg_Value[0]);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP15;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP14;
 		Shell_Task.Register.retry  = 1000;
@@ -1214,8 +1209,8 @@ I2C_SET_PROC_GROUP13:
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP14:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -1233,8 +1228,8 @@ I2C_SET_PROC_GROUP15:
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP15_ERROR:
-	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1259,16 +1254,16 @@ I2C_SET_PROC_GROUP18:
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP19:
-	string_printf(&fmt_driver, "\r\n## i2cset: set value success\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## i2cset: set value success\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP20:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -1278,8 +1273,8 @@ I2C_SET_PROC_GROUP21:
 	Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP0;
 	return CORE_DONE;
 I2C_SET_PROC_GROUP22:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1297,32 +1292,32 @@ I2C_SET_PROC_GROUP23:
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP24:
-	string_printf(&fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP25:
-	string_printf(&fmt_driver, "\r\n## Error: reg=0x%2x REG_ADDR_NO_ACK\r\n", Shell_Task.Reg_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: reg=0x%2x REG_ADDR_NO_ACK\r\n", Shell_Task.Reg_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP26:
-	string_printf(&fmt_driver, "\r\n## Error: reg=0x%2x WR_VALUE_NO_ACK\r\n", Shell_Task.Reg_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: reg=0x%2x WR_VALUE_NO_ACK\r\n", Shell_Task.Reg_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_SET_PROC_GROUP27:
-	string_printf(&fmt_driver, "\r\n## Error: i2c bus error\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: i2c bus error\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_SET_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_SET_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1394,7 +1389,7 @@ int do_i2cwrite(int argc,char *argv[])
 	goto *function[Shell_Task.Register.R15_PC];
 I2C_WRITE_PROC_GROUP0:
 	if(argc >= 4){
-		sscanf_driver.str = argv[1];
+		Shell_Task.sscanf_driver.str = argv[1];
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP2;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP5;
 	}else{
@@ -1402,10 +1397,10 @@ I2C_WRITE_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP22;
 	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
@@ -1417,21 +1412,21 @@ I2C_WRITE_PROC_GROUP3:
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP4:
-	sscanf_driver.str = argv[2];
+	Shell_Task.sscanf_driver.str = argv[2];
 	Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP6;
 	Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP5;
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP5:
-	string_scanf(&sscanf_driver, NULL);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, NULL);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP6:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP22;
 	}else{
-		Shell_Task.Dev_Addr = sscanf_driver.Register.R0_Result;
+		Shell_Task.Dev_Addr = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP6_1;
 		Shell_Task.Register.R6_Count = 0;
 	}
@@ -1444,22 +1439,22 @@ I2C_WRITE_PROC_GROUP6_1:
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP7:
-	sscanf_driver.str = argv[Shell_Task.Register.R6_Count+3];
+	Shell_Task.sscanf_driver.str = argv[Shell_Task.Register.R6_Count+3];
 	Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP9;
 	Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP5;
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP9:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP22;
 	}else{
-		Shell_Task.Reg_Value[Shell_Task.Register.R6_Count] = sscanf_driver.Register.R0_Result;
+		Shell_Task.Reg_Value[Shell_Task.Register.R6_Count] = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R6_Count++;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP6_1;
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP13:
-	string_printf(&fmt_driver, "\r\n## i2cwrite: bus%d dev=0x%2x\r\n", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## i2cwrite: bus%d dev=0x%2x\r\n", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP15;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP14;
 		Shell_Task.Register.retry  = 1000;
@@ -1467,8 +1462,8 @@ I2C_WRITE_PROC_GROUP13:
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP14:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -1486,8 +1481,8 @@ I2C_WRITE_PROC_GROUP15:
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP15_ERROR:
-	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1512,16 +1507,16 @@ I2C_WRITE_PROC_GROUP18:
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP19:
-	string_printf(&fmt_driver, "\r\n## i2cwrite: set value success\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## i2cwrite: set value success\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP20:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -1531,8 +1526,8 @@ I2C_WRITE_PROC_GROUP21:
 	Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP0;
 	return CORE_DONE;
 I2C_WRITE_PROC_GROUP22:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1550,32 +1545,32 @@ I2C_WRITE_PROC_GROUP23:
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP24:
-	string_printf(&fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP25:
-	string_printf(&fmt_driver, "\r\n## Error: REG_ADDR_NO_ACK\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: REG_ADDR_NO_ACK\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP26:
-	string_printf(&fmt_driver, "\r\n## Error: WR_VALUE_NO_ACK\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: WR_VALUE_NO_ACK\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_WRITE_PROC_GROUP27:
-	string_printf(&fmt_driver, "\r\n## Error: i2c bus error\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: i2c bus error\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_WRITE_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_WRITE_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1656,7 +1651,7 @@ int do_i2cread(int argc,char *argv[])
 I2C_READ_PROC_GROUP0:
 	Shell_Task.Reg_Addr = 0;
 	if(argc == 4){
-		sscanf_driver.str = argv[1];
+		Shell_Task.sscanf_driver.str = argv[1];
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP2;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP5;
 	}else{
@@ -1664,10 +1659,10 @@ I2C_READ_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP22;
 	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
@@ -1679,34 +1674,34 @@ I2C_READ_PROC_GROUP3:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP4:
-	sscanf_driver.str = argv[2];
+	Shell_Task.sscanf_driver.str = argv[2];
 	Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP6;
 	Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP5;
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP5:
-	string_scanf(&sscanf_driver,NULL);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver,NULL);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP6:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP22;
 	}else{
-		Shell_Task.Dev_Addr = sscanf_driver.Register.R0_Result;
+		Shell_Task.Dev_Addr = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP10;
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP10:
-	sscanf_driver.str = argv[3];
+	Shell_Task.sscanf_driver.str = argv[3];
 	Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP12;
 	Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP5;
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP12:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP22;
 	}else{
-		Shell_Task.Value_Length = sscanf_driver.Register.R0_Result;
+		Shell_Task.Value_Length = Shell_Task.sscanf_driver.Register.R0_Result;
 		if( Shell_Task.Value_Length > 256){
 			Shell_Task.Value_Length = 256;
 		}
@@ -1714,8 +1709,8 @@ I2C_READ_PROC_GROUP12:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP13:
-	string_printf(&fmt_driver, "\r\n## I2cget: bus%d dev=0x%2x len=%d", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, Shell_Task.Value_Length);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## I2cget: bus%d dev=0x%2x len=%d", Shell_Task.Register.R5_Object, Shell_Task.Dev_Addr, Shell_Task.Value_Length);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP15;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP14;
 		Shell_Task.Register.retry  = 1000;
@@ -1723,8 +1718,8 @@ I2C_READ_PROC_GROUP13:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP14:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -1742,8 +1737,8 @@ I2C_READ_PROC_GROUP15:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP15_ERROR:
-	string_printf(&fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Open i2c bus%d timeout\r\n", Shell_Task.Register.R5_Object);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1768,8 +1763,8 @@ I2C_READ_PROC_GROUP18:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP19:
-	string_printf(&fmt_driver, " loading...\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, " loading...\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R6_Count = 0;
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP20_1;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
@@ -1777,8 +1772,8 @@ I2C_READ_PROC_GROUP19:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP20:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -1796,8 +1791,8 @@ I2C_READ_PROC_GROUP20_1:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP20_2:
-	string_printf(&fmt_driver, "0x%2x ",Shell_Task.Reg_Value[Shell_Task.Register.R6_Count]);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "0x%2x ",Shell_Task.Reg_Value[Shell_Task.Register.R6_Count]);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP20_1;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
 		Shell_Task.Register.R6_Count++;
@@ -1805,8 +1800,8 @@ I2C_READ_PROC_GROUP20_2:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP20_3:
-	string_printf(&fmt_driver, "\r\n[0x%2x]-> ",Shell_Task.Reg_Addr+Shell_Task.Register.R6_Count);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n[0x%2x]-> ",Shell_Task.Reg_Addr+Shell_Task.Register.R6_Count);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP20_2;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1816,8 +1811,8 @@ I2C_READ_PROC_GROUP21:
 	Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP0;
 	return CORE_DONE;
 I2C_READ_PROC_GROUP22:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1835,32 +1830,32 @@ I2C_READ_PROC_GROUP23:
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP24:
-	string_printf(&fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: DEV_ADDR_NO_ACK\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP25:
-	string_printf(&fmt_driver, "\r\n## Error: reg=0x%2x REG_ADDR_NO_ACK\r\n", Shell_Task.Reg_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: reg=0x%2x REG_ADDR_NO_ACK\r\n", Shell_Task.Reg_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP26:
-	string_printf(&fmt_driver, "\r\n## Error: reg=0x%2x WR_VALUE_NO_ACK\r\n", Shell_Task.Reg_Addr);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: reg=0x%2x WR_VALUE_NO_ACK\r\n", Shell_Task.Reg_Addr);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 I2C_READ_PROC_GROUP27:
-	string_printf(&fmt_driver, "\r\n## Error: i2c bus error\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Error: i2c bus error\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = I2C_READ_PROC_GROUP21;
 		Shell_Task.Register.R15_PC = I2C_READ_PROC_GROUP20;
 		Shell_Task.Register.R1_Index = 0;
@@ -1926,8 +1921,8 @@ ADC_PROC_GROUP2:
 	}
 	return CORE_RUNNING;
 ADC_PROC_GROUP3:	
-	string_printf(&fmt_driver, "\r\n\r\n##Vref = 3300mV, PA0 = %4dmV,",Shell_Task.Register.R0_Result);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n\r\n##Vref = 3300mV, PA0 = %4dmV,",Shell_Task.Register.R0_Result);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = ADC_PROC_GROUP4;
 		Shell_Task.Register.R15_PC = ADC_PROC_GROUP7;
 		Shell_Task.Register.R1_Index = 0;
@@ -1945,16 +1940,16 @@ ADC_PROC_GROUP5:
 	}
 	return CORE_RUNNING;
 ADC_PROC_GROUP6:	
-	string_printf(&fmt_driver, "PA1 = %4dmV.\r\n",Shell_Task.Register.R0_Result);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "PA1 = %4dmV.\r\n",Shell_Task.Register.R0_Result);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = ADC_PROC_GROUP8;
 		Shell_Task.Register.R15_PC = ADC_PROC_GROUP7;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;	
 ADC_PROC_GROUP7:	
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -2053,22 +2048,22 @@ SPI_STATE_ARGC_COMP://第一步参数错误，报错退出
 	}
 	return CORE_RUNNING;
 SPI_STATE_BUS_GET://第二步bus错误，报错退出
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = SPI_STATE_BUS_GET_SUCCESS;
 	}
 	return CORE_RUNNING;
 SPI_STATE_BUS_GET_SUCCESS:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
 	}else{
-		Shell_Task.Register.Bus = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.Bus = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = SPI_STATE_BUS_NUM_COMP;
 	}
 	return CORE_RUNNING;
 SPI_STATE_ERROR_ECHO:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO_QUEUE;
 		Shell_Task.Register.R1_Index = 0;
 	}
@@ -2081,16 +2076,16 @@ SPI_STATE_BUS_NUM_COMP:
 	}
 	return CORE_RUNNING;
 SPI_STATE_DEVICE_GET:
-	string_scanf(&sscanf_driver, argv[2]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[2]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = SPI_STATE_DEVICE_GET_SUCCESS;
 	}
 	return CORE_RUNNING;
 SPI_STATE_DEVICE_GET_SUCCESS:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
 	}else{
-		Shell_Task.Register.Device = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.Device = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = SPI_STATE_DEVICE_NUM_COMP;
 	}
 	return CORE_RUNNING;
@@ -2119,8 +2114,8 @@ SPI_STATE_OPEN_DEVICE:
 	}
 	return CORE_RUNNING;
 SPI_STATE_OPEN_DEVICE_ERROR:
-	string_printf(&fmt_driver, "\r\n\r\n## Open spi bus%d timeout\r\n", Shell_Task.Register.Bus);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n\r\n## Open spi bus%d timeout\r\n", Shell_Task.Register.Bus);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = SPI_STATE_CLOSE_SPI_1;
 		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
 		Shell_Task.Register.R1_Index = 0;
@@ -2134,31 +2129,31 @@ SPI_STATE_TX_DATA_PARAM:
 	}
 	return CORE_RUNNING;
 SPI_STATE_TX_DATA_PARAM_START:
-	string_scanf(&sscanf_driver, argv[3+Shell_Task.Register.R6_Count]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[3+Shell_Task.Register.R6_Count]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM_SUCCESS;
 	}
 	return CORE_RUNNING;
 SPI_STATE_TX_DATA_PARAM_SUCCESS:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
 	}else{
-		Shell_Task.TxBuf[Shell_Task.Register.R6_Count] = sscanf_driver.Register.R0_Result;
+		Shell_Task.TxBuf[Shell_Task.Register.R6_Count] = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R6_Count++;
 		Shell_Task.Register.R15_PC = SPI_STATE_TX_DATA_PARAM;
 	}
 	return CORE_RUNNING;
 SPI_STATE_RX_DATA_PARAM_START:
-	string_scanf(&sscanf_driver, argv[argc-1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[argc-1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = SPI_STATE_RX_DATA_PARAM_SUCCESS;
 	}
 	return CORE_RUNNING;
 SPI_STATE_RX_DATA_PARAM_SUCCESS:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = SPI_STATE_ERROR_ECHO;
 	}else{
-		Shell_Task.RxLen = sscanf_driver.Register.R0_Result;
+		Shell_Task.RxLen = Shell_Task.sscanf_driver.Register.R0_Result;
 		if( Shell_Task.RxLen > 16){
 			Shell_Task.RxLen = 16;
 		}
@@ -2174,16 +2169,16 @@ SPI_STATE_TX_DATA_ECHO:
 	}
 	return CORE_RUNNING;
 SPI_STATE_TX_DATA_ECHO_HEAD:
-	string_printf(&fmt_driver, "\r\n\r\n## SPI Bus = %d, Dev = %d, Tx Length = %d, Rx Length = %d\r\n## Tx Data : ",Shell_Task.Register.Bus,Shell_Task.Register.Device, Shell_Task.TxLen, Shell_Task.RxLen);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n\r\n## SPI Bus = %d, Dev = %d, Tx Length = %d, Rx Length = %d\r\n## Tx Data : ",Shell_Task.Register.Bus,Shell_Task.Register.Device, Shell_Task.TxLen, Shell_Task.RxLen);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = SPI_STATE_TX_DATA_ECHO;
 		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 SPI_STATE_TX_DATA_ECHO_START:
-	string_printf(&fmt_driver, "0x%2x ",Shell_Task.TxBuf[Shell_Task.Register.R6_Count]);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "0x%2x ",Shell_Task.TxBuf[Shell_Task.Register.R6_Count]);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = SPI_STATE_TX_DATA_ECHO;
 		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
 		Shell_Task.Register.R6_Count++;
@@ -2191,8 +2186,8 @@ SPI_STATE_TX_DATA_ECHO_START:
 	}
 	return CORE_RUNNING;
 SPI_STATE_DATA_ECHO_QUEUE:	
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
@@ -2216,16 +2211,16 @@ SPI_STATE_ECHO_READ_DATA:
 	}
 	return CORE_RUNNING;
 SPI_STATE_RX_DATA_ECHO_HEAD:
-	string_printf(&fmt_driver, "\r\n## Rx Data : ");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Rx Data : ");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = SPI_STATE_ECHO_READ_DATA;
 		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 SPI_STATE_ECHO_READ_DATA_START:
-	string_printf(&fmt_driver, "0x%2x ",Shell_Task.RxBuf[Shell_Task.Register.R6_Count]);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "0x%2x ",Shell_Task.RxBuf[Shell_Task.Register.R6_Count]);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = SPI_STATE_ECHO_READ_DATA;
 		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
 		Shell_Task.Register.R6_Count++;
@@ -2233,8 +2228,8 @@ SPI_STATE_ECHO_READ_DATA_START:
 	}
 	return CORE_RUNNING;
 SPI_STATE_CLOSE_SPI_ENTER:
-	string_printf(&fmt_driver, "\r\n");
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R14_LR = SPI_STATE_CLOSE_SPI;
 		Shell_Task.Register.R15_PC = SPI_STATE_DATA_ECHO_QUEUE;
 		Shell_Task.Register.R1_Index = 0;
@@ -2248,8 +2243,8 @@ SPI_STATE_CLOSE_SPI_1:
 	Shell_Task.Register.R15_PC = SPI_STATE_ARGC_COMP;
 	return CORE_DONE;
 SPI_STATE_ERROR_ECHO_QUEUE:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = SPI_STATE_ARGC_COMP;
@@ -2288,30 +2283,30 @@ Ymodem_INIT:
 		return CORE_DONE;
 	}
 PARSE_ARGV1:
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP){
 		goto PARSE_ARGV1;
 	}
 	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = Ymodem_INIT;
 		printf("\r\n## Argv[1] Error\r\n");
 		return CORE_DONE;
 	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 	}
 PARSE_ARGV2:	
-	string_scanf(&sscanf_driver, argv[2]);
-	if( sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[2]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP){
 		goto PARSE_ARGV2;
 	}
 	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = Ymodem_INIT;
 		printf("\r\n## Argv[2] Error\r\n");
 		return CORE_DONE;
 	}else{
-		Shell_Task.Register.Address = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.Address = Shell_Task.sscanf_driver.Register.R0_Result;
 	}
 	
 	ymodem.Init_addr = Shell_Task.Register.Address;
@@ -2398,16 +2393,16 @@ GPIOget_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 GPIOget_PROC_GROUP1:
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP2;
 	}
 	return CORE_RUNNING;
 GPIOget_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP10;
 	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
@@ -2426,16 +2421,16 @@ GPIOget_PROC_GROUP3:
 	}
 	return CORE_RUNNING;
 GPIOget_PROC_GROUP4:
-	string_scanf(&sscanf_driver,argv[2]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver,argv[2]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP5;
 	}
 	return CORE_RUNNING;
 GPIOget_PROC_GROUP5:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP10;
 	}else{
-		Shell_Task.Register.R4_Status = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R4_Status = Shell_Task.sscanf_driver.Register.R0_Result;
 		if( Shell_Task.Register.R4_Status > 15){
 			Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP10;
 		}else{
@@ -2449,11 +2444,11 @@ GPIOget_PROC_GROUP6:
 	Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP7;
 	return CORE_RUNNING;
 GPIOget_PROC_GROUP7:
-	string_printf(&fmt_driver, "\r\n\r\n## get GPIO%s_%d state: %d\r\n", argv[1], Shell_Task.Register.R4_Status, Shell_Task.Register.R0_Result);
+	string_printf(&Shell_Task.fmt_driver, "\r\n\r\n## get GPIO%s_%d state: %d\r\n", argv[1], Shell_Task.Register.R4_Status, Shell_Task.Register.R0_Result);
 	Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP7_1;
 	return CORE_RUNNING;
 GPIOget_PROC_GROUP7_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP9;
 		Shell_Task.Register.R1_Index = 0;
 	}else{
@@ -2461,8 +2456,8 @@ GPIOget_PROC_GROUP7_1:
 	}
 	return CORE_RUNNING;
 GPIOget_PROC_GROUP9:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP0;
@@ -2470,8 +2465,8 @@ GPIOget_PROC_GROUP9:
 	}
 	return CORE_RUNNING;
 GPIOget_PROC_GROUP10:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = GPIOget_PROC_GROUP9;
 		Shell_Task.Register.R1_Index = 0;
 	}
@@ -2527,16 +2522,16 @@ GPIOSet_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP1:
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP2;
 	}
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP2:
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP10;
 	}else{
-		Shell_Task.Register.R5_Object = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
@@ -2555,16 +2550,16 @@ GPIOSet_PROC_GROUP3:
 	}
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP4:
-	string_scanf(&sscanf_driver,argv[2]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver,argv[2]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP5;
 	}
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP5:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP10;
 	}else{
-		Shell_Task.Register.R4_Status = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R4_Status = Shell_Task.sscanf_driver.Register.R0_Result;
 		if( Shell_Task.Register.R4_Status > 15){
 			Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP10;
 		}else{
@@ -2574,16 +2569,16 @@ GPIOSet_PROC_GROUP5:
 	}
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP4_1:
-	string_scanf(&sscanf_driver,argv[3]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver,argv[3]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP5_1;
 	}
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP5_1:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP10;
 	}else{
-		Shell_Task.Register.R8_Flag = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R8_Flag = Shell_Task.sscanf_driver.Register.R0_Result;
 		if( Shell_Task.Register.R8_Flag == 0){
 			GPIO_SET_LOW(Shell_Task.PORT,Shell_Task.PIN);
 		}else{
@@ -2597,11 +2592,11 @@ GPIOSet_PROC_GROUP6:
 	Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP7;
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP7:
-	string_printf(&fmt_driver, "\r\n\r\n## set GPIO%s_%d state: %d\r\n", argv[1], Shell_Task.Register.R4_Status, Shell_Task.Register.R8_Flag);
+	string_printf(&Shell_Task.fmt_driver, "\r\n\r\n## set GPIO%s_%d state: %d\r\n", argv[1], Shell_Task.Register.R4_Status, Shell_Task.Register.R8_Flag);
 	Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP7_1;
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP7_1:
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP9;
 		Shell_Task.Register.R1_Index = 0;
 	}else{
@@ -2609,8 +2604,8 @@ GPIOSet_PROC_GROUP7_1:
 	}
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP9:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP0;
@@ -2618,8 +2613,8 @@ GPIOSet_PROC_GROUP9:
 	}
 	return CORE_RUNNING;
 GPIOSet_PROC_GROUP10:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = GPIOSet_PROC_GROUP9;
 		Shell_Task.Register.R1_Index = 0;
 	}
@@ -2660,16 +2655,16 @@ W25Q_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 W25Q_PROC_GROUP1:
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP2;
 	}
 	return CORE_RUNNING;
 W25Q_PROC_GROUP2:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP5;
 	}else{
-		Shell_Task.Register.Address = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.Address = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
@@ -2678,22 +2673,22 @@ W25Q_PROC_GROUP3:
 		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP4;
 	}
 W25Q_PROC_GROUP4:
-	string_printf(&fmt_driver, "\r\n## read addr = 0x%2x -> data = 0x%2x\r\n",Shell_Task.Register.Address, Shell_Task.RxBuf[0]);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## read addr = 0x%2x -> data = 0x%2x\r\n",Shell_Task.Register.Address, Shell_Task.RxBuf[0]);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP6;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 W25Q_PROC_GROUP5:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP6;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 W25Q_PROC_GROUP6:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = W25Q_PROC_GROUP7;
@@ -2741,26 +2736,26 @@ W25Q_WRITE_PROC_GROUP0:
 	}
 	return CORE_RUNNING;
 W25Q_WRITE_PROC_GROUP1:
-	string_scanf(&sscanf_driver, argv[1]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+	string_scanf(&Shell_Task.sscanf_driver, argv[1]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP2;
 	}
 	return CORE_RUNNING;
 W25Q_WRITE_PROC_GROUP2:	
-	if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP5;
 	}else{
-		Shell_Task.Register.Address = sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.Address = Shell_Task.sscanf_driver.Register.R0_Result;
 		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP3;
 	}
 	return CORE_RUNNING;
 W25Q_WRITE_PROC_GROUP3:
-	string_scanf(&sscanf_driver, argv[2]);
-	if( sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
-		if( sscanf_driver.Register.R9_Error == CORE_ERROR){
+	string_scanf(&Shell_Task.sscanf_driver, argv[2]);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 			Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP5;
 		}else{
-			Shell_Task.Register.R2_cin = sscanf_driver.Register.R0_Result;
+			Shell_Task.Register.R2_cin = Shell_Task.sscanf_driver.Register.R0_Result;
 			Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP3_1;
 		}
 	}
@@ -2777,29 +2772,29 @@ W25Q_WRITE_PROC_GROUP3_1:
 	}
 	return CORE_RUNNING;
 W25Q_WRITE_PROC_GROUP4:
-	string_printf(&fmt_driver, "\r\n## write addr = 0x%2x -> data = 0x%2x success\r\n",Shell_Task.Register.Address, Shell_Task.Register.R2_cin);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## write addr = 0x%2x -> data = 0x%2x success\r\n",Shell_Task.Register.Address, Shell_Task.Register.R2_cin);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP6;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 W25Q_WRITE_PROC_GROUP4_1:
-	string_printf(&fmt_driver, "\r\n## write addr = 0x%2x -> data = 0x%2x timeout\r\n",Shell_Task.Register.Address, Shell_Task.Register.R2_cin);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, "\r\n## write addr = 0x%2x -> data = 0x%2x timeout\r\n",Shell_Task.Register.Address, Shell_Task.Register.R2_cin);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP6;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;	
 W25Q_WRITE_PROC_GROUP5:
-	string_printf(&fmt_driver, SHELL_CMD_ERROR);
-	if( fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+	string_printf(&Shell_Task.fmt_driver, SHELL_CMD_ERROR);
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP6;
 		Shell_Task.Register.R1_Index = 0;
 	}
 	return CORE_RUNNING;
 W25Q_WRITE_PROC_GROUP6:
-	if( fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
-		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&fmt_driver.str[Shell_Task.Register.R1_Index]);
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
 		Shell_Task.Register.R1_Index++;
 	}else{
 		Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP7;
@@ -2852,22 +2847,118 @@ int do_oled_w25q_tast(int argc,char *argv[])
 	}
 	return CORE_RUNNING;
 }
-uint8_t ayy[8];
-int do_can1(int argc,char *argv[])
+
+int do_canstd(int argc,char *argv[])
 {
-	ayy[0] = 0x42;
-	CAN_Standard_Send_Msg(&CAN1_BUS, 0x12,ayy,2);
+	if (argc < 3 || argc > 11) {
+        printf("%s", SHELL_CMD_ERROR);
+        return CORE_DONE;
+    }
+	do{
+		string_scanf(&Shell_Task.sscanf_driver, argv[1]);//解析ID
+	}while(Shell_Task.sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP);
+	
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
+		printf("%s", SHELL_CMD_ERROR);
+        return CORE_DONE;
+	}else{
+		Shell_Task.Dev_Addr = Shell_Task.sscanf_driver.Register.R0_Result;
+	}
+	
+	do{
+		string_scanf(&Shell_Task.sscanf_driver, argv[2]);//解析长度
+	}while(Shell_Task.sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP);
+	
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
+		printf("%s", SHELL_CMD_ERROR);
+        return CORE_DONE;
+	}else{
+		Shell_Task.Value_Length = Shell_Task.sscanf_driver.Register.R0_Result;
+	}
+	
+	for( Shell_Task.Register.R1_Index = 0;Shell_Task.Register.R1_Index < 8;Shell_Task.Register.R1_Index++)
+	{
+		if( Shell_Task.Register.R1_Index < Shell_Task.Value_Length && Shell_Task.Register.R1_Index <( argc - 3))
+		{
+			do{
+				string_scanf(&Shell_Task.sscanf_driver, argv[3+Shell_Task.Register.R1_Index]);//解析长度
+			}while(Shell_Task.sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP);
+			
+			if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
+				printf("%s", SHELL_CMD_ERROR);
+				return CORE_DONE;
+			}else{
+				Shell_Task.TxBuf[Shell_Task.Register.R1_Index] = Shell_Task.sscanf_driver.Register.R0_Result;
+			}
+		}else{
+			Shell_Task.TxBuf[Shell_Task.Register.R1_Index] = 0;
+		}
+	}
+	printf("\r\n\r\nCAN Send: ExdId=0x%x,DLC=%d,Data:",Shell_Task.Dev_Addr,Shell_Task.Value_Length);
+	for(int i = 0; i<8;i++){
+		printf("0x%x ",Shell_Task.TxBuf[i]);
+	}
+	printf("\r\n");
+	CAN_Standard_Send_Msg(&CAN1_BUS, Shell_Task.Dev_Addr,Shell_Task.TxBuf,Shell_Task.Value_Length);
 	return CORE_DONE;
 }
 
-int do_can2(int argc,char *argv[])
+int do_canexd(int argc,char *argv[])
 {
-	ayy[0] = 0x41;
-	CAN_Extended_Send_Msg(&CAN1_BUS, 0x12,ayy,2);
+	if (argc < 3 || argc > 11) {
+        printf("%s", SHELL_CMD_ERROR);
+        return CORE_DONE;
+    }
+	do{
+		string_scanf(&Shell_Task.sscanf_driver, argv[1]);//解析ID
+	}while(Shell_Task.sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP);
+	
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
+		printf("%s", SHELL_CMD_ERROR);
+        return CORE_DONE;
+	}else{
+		Shell_Task.Dev_Addr = Shell_Task.sscanf_driver.Register.R0_Result;
+	}
+	
+	do{
+		string_scanf(&Shell_Task.sscanf_driver, argv[2]);//解析长度
+	}while(Shell_Task.sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP);
+	
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
+		printf("%s", SHELL_CMD_ERROR);
+        return CORE_DONE;
+	}else{
+		Shell_Task.Value_Length = Shell_Task.sscanf_driver.Register.R0_Result;
+	}
+	
+	for( Shell_Task.Register.R1_Index = 0;Shell_Task.Register.R1_Index < 8;Shell_Task.Register.R1_Index++)
+	{
+		if( Shell_Task.Register.R1_Index < Shell_Task.Value_Length && Shell_Task.Register.R1_Index <( argc - 3))
+		{
+			do{
+				string_scanf(&Shell_Task.sscanf_driver, argv[3+Shell_Task.Register.R1_Index]);//解析长度
+			}while(Shell_Task.sscanf_driver.Register.R15_PC != CALL_SSCANF_PROC_ENDP);
+			
+			if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
+				printf("%s", SHELL_CMD_ERROR);
+				return CORE_DONE;
+			}else{
+				Shell_Task.TxBuf[Shell_Task.Register.R1_Index] = Shell_Task.sscanf_driver.Register.R0_Result;
+			}
+		}else{
+			Shell_Task.TxBuf[Shell_Task.Register.R1_Index] = 0;
+		}
+	}
+	printf("\r\n\r\nCAN Send: ExdId=0x%x,DLC=%d,Data:",Shell_Task.Dev_Addr,Shell_Task.Value_Length);
+	for(int i = 0; i<8;i++){
+		printf("0x%x ",Shell_Task.TxBuf[i]);
+	}
+	printf("\r\n");
+	CAN_Extended_Send_Msg(&CAN1_BUS, Shell_Task.Dev_Addr,Shell_Task.TxBuf,Shell_Task.Value_Length);
 	return CORE_DONE;
 }
 
-void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device, Usart_Bus_e Bus)
+void shell_Cmd_Init(Shell_Core_Class_t *Shell_Device, Usart_Bus_e Bus)
 {
 //方括号[]表示可选参数
 //尖括号<>表示必选参数
@@ -2941,9 +3032,9 @@ void shell_Cmd_Init(Shell_Device_Class_t *Shell_Device, Usart_Bus_e Bus)
 	cmd_list_create_node(oledw25q,"\r\noledw25q - oledw25q tast",do_oled_w25q_tast);
 	cmd_list_linked_list_tail(oledw25q,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(can1,"\r\ncan1 - std",do_can1);
-	cmd_list_linked_list_tail(can1,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(canstd,"\r\ncanstd - +id +len data*n",do_canstd);
+	cmd_list_linked_list_tail(canstd,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(can2,"\r\ncan2 - exd",do_can2);
-	cmd_list_linked_list_tail(can2,Shell_Device->Shell_List_Header);
+	cmd_list_create_node(canexd,"\r\ncanexd - +id +len data*n",do_canexd);
+	cmd_list_linked_list_tail(canexd,Shell_Device->Shell_List_Header);
 }

@@ -24,8 +24,7 @@ char S_StackPush(char buf[], int *pMove, uint16_t Stack_Size, char *value)
 
 char S_StackPop(char buf[], int *pMove, uint16_t Stack_Size, char *value)
 {
-	if (*pMove > 0)
-	{
+	if( *pMove > 0){
 		(*pMove)--;
 		*value = buf[*pMove];
 		buf[*pMove] = '\0';

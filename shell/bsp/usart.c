@@ -1,18 +1,6 @@
 #include "usart.h"
 #include "string.h"	 
 
-//重定义fputc函数 
-int fputc(int ch, FILE *f)
-{    
-	while((USART1->SR & USART_FLAG_TXE) == RESET);	
-	/* 发送一个字节数据到串口 */
-	USART_SendData(USART1, (uint8_t) ch);
-	
-	return (ch);
-}
-//----------------------------------------------------------------
-
-
 
 //串口1初始化函数
 void Usart1_Init(u32 bound) 

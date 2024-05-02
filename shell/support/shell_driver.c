@@ -1,9 +1,9 @@
 #include "shell_driver.h"
 
 
-extern void shell_Cmd_Init(Shell_Device_Class_t *Shell, Usart_Bus_e Bus);
+extern void shell_Cmd_Init(Shell_Core_Class_t *Shell, Usart_Bus_e Bus);
 
-Shell_Device_Class_t Shell_Device = {
+Shell_Core_Class_t Shell_Device = {
 	.Shell_Driver = {
 		.Register.R12_Lock = CORE_UNLOCK,
 		.Register.R4_Status = SHELL_ARROW_KEYS_DETECT_GROUP0,
@@ -16,7 +16,7 @@ Shell_Device_Class_t Shell_Device = {
 };
 
 
-char KeyboardInterrupt(Shell_Device_Class_t *Shell)
+char KeyboardInterrupt(Shell_Core_Class_t *Shell)
 {
 	if( QueueLength(&Shell->Shell_Driver.Shell_Queue) > 0){
 		QueueEmpty(&Shell->Shell_Driver.Shell_Queue);
@@ -26,7 +26,7 @@ char KeyboardInterrupt(Shell_Device_Class_t *Shell)
 }
 
 
-void shell_Driver(Shell_Device_Class_t *Shell)
+void shell_Driver(Shell_Core_Class_t *Shell)
 {
 	static const void *function[SHELL_STATE_SUM] = {
 		
@@ -262,7 +262,6 @@ SHELL_HISTORY_RECALL_GROUP2:
 		Shell->Shell_Driver.Register.R15_PC = SHELL_HISTORY_RECALL_GROUP3;
 	}
 	return;
-	
 SHELL_HISTORY_RECALL_GROUP3:
 	if( Shell->Shell_Strcmp.Register.R0_Result != 0){
 		Shell->Shell_Driver.Register.R15_PC = SHELL_HISTORY_RECALL_GROUP4;
@@ -360,7 +359,6 @@ SHELL_HISTORY_BACKUP_GROUP1:
 		Shell->Shell_Driver.Register.R15_PC = SHELL_HISTORY_BACKUP_GROUP2;
 	}
 	return;
-	
 SHELL_HISTORY_BACKUP_GROUP2:
 	if( Shell->Shell_Strcmp.Register.R0_Result != 0){
 		StackEmpty(&Shell->Shell_Driver.hist_Stack[Shell->Shell_Driver.hist_Cur_IDX]);
@@ -614,7 +612,7 @@ SHELL_PROC_ENDP://max 3us
 	return;
 }
 
-void shell_Putchar(Shell_Device_Class_t *Shell)
+void shell_Putchar(Shell_Core_Class_t *Shell)
 {
 	enum
 	{
@@ -645,7 +643,7 @@ PUTCHAR_PROCESS_DATA:
 	return;
 }
 
-void shell_SIM_Uart_Putchar(Shell_Device_Class_t *Shell)
+void shell_SIM_Uart_Putchar(Shell_Core_Class_t *Shell)
 {
 	enum
 	{
@@ -677,13 +675,13 @@ PUTCHAR_PROCESS_DATA:
 }
 
 //获取数据
-void shell_SIM_Uart_Getchar(Shell_Device_Class_t *Shell)
+void shell_SIM_Uart_Getchar(Shell_Core_Class_t *Shell)
 {
 	QueueDataIn(&Shell_Device.Shell_Driver.Shell_Queue, &SIM_UART.Rx_Data);
 }
 
 //获取数据
-void shell_Getchar(Shell_Device_Class_t *Shell)
+void shell_Getchar(Shell_Core_Class_t *Shell)
 {
 	if( USART_GetFlagStatus(Shell->USARTx,USART_FLAG_RXNE) != RESET){
 		uint8_t temp = USART_ReceiveData(Shell->USARTx);//1s/115200*10=86.8us
@@ -693,7 +691,7 @@ void shell_Getchar(Shell_Device_Class_t *Shell)
 
 
 //中断获取
-void shell_Getchar_IT(Shell_Device_Class_t *Shell)
+void shell_Getchar_IT(Shell_Core_Class_t *Shell)
 {
 	
 	if(USART_GetITStatus(Shell->USARTx,USART_IT_RXNE) != RESET)

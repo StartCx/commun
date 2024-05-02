@@ -140,37 +140,36 @@ typedef struct
 }Shell_Driver_t;
 
 
-typedef struct Shell_Device_Class_t
+typedef struct Shell_Core_Class_t
 {
 	//属性
-	uint8_t 			Bus;
-	USART_TypeDef 		*USARTx;
-	struct list_head 	Shell_List_Header;
-	Queue512_t 			Shell_Print_Queue;
-	strtok_t   			Shell_Strtok;
-	strcmp_t	  		Shell_Strcmp;
-	strcpy_t	  		Shell_Strcpy;
-	fmt_t 	  			Shell_fmt;
-	Shell_Driver_t 		Shell_Driver;
-	
-	CPU_RegisterClass_t Shell_putchar;
-	Timer_t				Timer;
-	SIM_UART_Driver_t *SIM_UART_Driver;
+	uint8_t 			Bus;				//定义串口编号
+	USART_TypeDef 		*USARTx;			//寄存器串口地址
+	struct list_head 	Shell_List_Header;	//命令链表头
+	Queue512_t 			Shell_Print_Queue;	//串口打印缓存
+	strtok_t   			Shell_Strtok;		//自定义strtok
+	strcmp_t	  		Shell_Strcmp;		//自定义strcmp
+	strcpy_t	  		Shell_Strcpy;		//自定义strcmp
+	fmt_t 	  			Shell_fmt;			//自定义fmt
+	Shell_Driver_t 		Shell_Driver;		//数据处理属性
+	CPU_RegisterClass_t Shell_putchar;		//串口输出
+	Timer_t				Timer;				//时间定时器
+	SIM_UART_Driver_t 	*SIM_UART_Driver;	//模拟串口
 	//方法
-	void (*Init)(struct Shell_Device_Class_t *Shell, Usart_Bus_e Bus);
-	void (*Get)(struct Shell_Device_Class_t *Shell);
-	void (*Put)(struct Shell_Device_Class_t *Shell);
-	void (*Driver)(struct Shell_Device_Class_t *Shell);
-}Shell_Device_Class_t;
+	void (*Init)(struct Shell_Core_Class_t *Shell, Usart_Bus_e Bus);
+	void (*Get)(struct Shell_Core_Class_t *Shell);
+	void (*Put)(struct Shell_Core_Class_t *Shell);
+	void (*Driver)(struct Shell_Core_Class_t *Shell);
+}Shell_Core_Class_t;
 
-extern Shell_Device_Class_t Shell_Device;
+extern Shell_Core_Class_t Shell_Device;
 
-void shell_Driver(Shell_Device_Class_t *Shell);
-void shell_Putchar(Shell_Device_Class_t *Shell);
-void shell_SIM_Uart_Putchar(Shell_Device_Class_t *Shell);
-void shell_SIM_Uart_Getchar(Shell_Device_Class_t *Shell);
-void shell_Getchar(Shell_Device_Class_t *Shell);
-void shell_Getchar_IT(Shell_Device_Class_t *Shell);
-extern char KeyboardInterrupt(Shell_Device_Class_t *Shell);
+void shell_Driver(Shell_Core_Class_t *Shell);
+void shell_Putchar(Shell_Core_Class_t *Shell);
+void shell_SIM_Uart_Putchar(Shell_Core_Class_t *Shell);
+void shell_SIM_Uart_Getchar(Shell_Core_Class_t *Shell);
+void shell_Getchar(Shell_Core_Class_t *Shell);
+void shell_Getchar_IT(Shell_Core_Class_t *Shell);
+extern char KeyboardInterrupt(Shell_Core_Class_t *Shell);
 
 #endif
