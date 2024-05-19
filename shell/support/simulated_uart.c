@@ -27,6 +27,8 @@ void SIM_Uart_Init(SIM_UART_Driver_t *SIM_UART_Driver)
 	GPIO_InitStructure.GPIO_Pin = SIM_UART_Driver->PIN_RX;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(SIM_UART_Driver->PORT_RX, &GPIO_InitStructure);
+	
+	GPIO_SET_HIGH(SIM_UART_Driver->PORT_TX, SIM_UART_Driver->PIN_TX);//空闲---高电平
 }
 
 
@@ -76,7 +78,6 @@ void SIM_Uart_Tx_Peripheral(SIM_UART_Driver_t *SIM_UART_Driver)		//模拟串口发送
 	{
 		SIM_UART_TX_GROUP0,
 		SIM_UART_TX_GROUP1,
-		SIM_UART_TX_GROUP2_START_BIT,
 		SIM_UART_TX_GROUP3_START_BIT,
 		SIM_UART_TX_GROUP4,
 		SIM_UART_TX_GROUP5,
@@ -85,7 +86,6 @@ void SIM_Uart_Tx_Peripheral(SIM_UART_Driver_t *SIM_UART_Driver)		//模拟串口发送
 	static const void *function[SIM_UART_TX_SUM] = {
 		[SIM_UART_TX_GROUP0] 			= &&SIM_UART_TX_GROUP0,
 		[SIM_UART_TX_GROUP1] 			= &&SIM_UART_TX_GROUP1,
-		[SIM_UART_TX_GROUP2_START_BIT] = &&SIM_UART_TX_GROUP2_START_BIT,
 		[SIM_UART_TX_GROUP3_START_BIT] = &&SIM_UART_TX_GROUP3_START_BIT,
 		[SIM_UART_TX_GROUP4] 			= &&SIM_UART_TX_GROUP4,
 		[SIM_UART_TX_GROUP5] 			= &&SIM_UART_TX_GROUP5,
@@ -103,12 +103,9 @@ SIM_UART_TX_GROUP1:
 		SIM_UART_Driver->Tx_Register.R15_PC = SIM_UART_TX_GROUP0;
 		SIM_UART_Driver->Tx_Register.R4_Status = CORE_IDLE;
 	}else{
-		SIM_UART_Driver->Tx_Register.R15_PC = SIM_UART_TX_GROUP2_START_BIT;
+		GPIO_SET_HIGH(SIM_UART_Driver->PORT_TX, SIM_UART_Driver->PIN_TX);//空闲---高电平
+		SIM_UART_Driver->Tx_Register.R15_PC = SIM_UART_TX_GROUP3_START_BIT;	
 	}
-	return;
-SIM_UART_TX_GROUP2_START_BIT:
-	GPIO_SET_HIGH(SIM_UART_Driver->PORT_TX, SIM_UART_Driver->PIN_TX);//空闲---高电平
-	SIM_UART_Driver->Tx_Register.R15_PC = SIM_UART_TX_GROUP3_START_BIT;	
 	return;
 SIM_UART_TX_GROUP3_START_BIT:
 	GPIO_SET_LOW(SIM_UART_Driver->PORT_TX, SIM_UART_Driver->PIN_TX);//起始位---低电平
@@ -131,7 +128,7 @@ SIM_UART_TX_GROUP4:
 SIM_UART_TX_GROUP5:
 	SIM_UART_Driver->Tx_Register.R1_Index++;
 	if( SIM_UART_Driver->Tx_Register.R1_Index < SIM_UART_Driver->Tx_num){
-		SIM_UART_Driver->Tx_Register.R15_PC = SIM_UART_TX_GROUP2_START_BIT;
+		SIM_UART_Driver->Tx_Register.R15_PC = SIM_UART_TX_GROUP3_START_BIT;
 	}else{
 		SIM_UART_Driver->Tx_Register.R15_PC = SIM_UART_TX_GROUP0;
 		SIM_UART_Driver->Tx_Register.R4_Status = CORE_IDLE;
@@ -187,7 +184,7 @@ SIM_UART_RX_GROUP2:
 		SIM_UART_Driver->Rx_Register.R15_PC = SIM_UART_RX_GROUP0;
 		return 1;
 	}else{
-		SIM_UART_Driver->Rx_Register.R15_PC = SIM_UART_RX_GROUP0;
+		SIM_UART_Driver->Rx_Register.R15_PC = SIM_UART_RX_INIT;
 	}
 	return 0;
 }

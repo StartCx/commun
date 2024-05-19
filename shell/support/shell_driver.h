@@ -106,8 +106,8 @@ enum
 	SHELL_STATE_SUM,
 };
 
-#define SHELL_HISTORY_MAX 		(10)
-#define ARGC_MAX 		  		(20)
+#define SHELL_HISTORY_MAX 		(8)
+#define ARGC_MAX 		  		(8)
 #define COUNTDOWN_TIME           3
 #define SHELL_PWD_AUTH           0
 #define SHELL_USER_PASSWORD      "123"

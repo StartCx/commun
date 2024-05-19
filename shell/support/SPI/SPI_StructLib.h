@@ -20,6 +20,13 @@ typedef enum
 	LSB_FIRST = 0x80,
 }spi_firstbit_e;
 
+
+typedef struct {
+    GPIO_TypeDef *GPIO_Port;  // 片选引脚对应的GPIO端口
+    uint16_t Pin;  // 片选引脚对应的引脚号
+}SPI_CS_Pin_t;
+
+
 typedef struct SPI_M_Bitbang_t
 {	
 	spi_mode_e 		SPI_Mode;
@@ -32,14 +39,15 @@ typedef struct SPI_M_Bitbang_t
 	uint16_t 		RxSize;
 	uint16_t 		Size;
 	uint8_t  		Func_Index;
-	GPIO_TypeDef	*PORT_CS[2];//端口
-	uint16_t 		PIN_CS[2];	//引脚
+	
 	GPIO_TypeDef	*PORT_SCK;	//端口
 	uint16_t 		PIN_SCK;	//引脚
 	GPIO_TypeDef	*PORT_MISO;	//端口
 	uint16_t 		PIN_MISO;	//引脚
 	GPIO_TypeDef	*PORT_MOSI;	//端口
 	uint16_t 		PIN_MOSI;	//引脚
+	SPI_CS_Pin_t 	*CS_Pins;  	// 片选引脚数组指针
+    uint8_t 		CS_SUM;  	// 片选引脚的数量
 	
 	CPU_RegisterClass_t Register;
 	
@@ -64,14 +72,15 @@ typedef struct SPI_M_Software_t
 	uint16_t 		Delay_time;	//延迟时间
 	uint16_t 		Delay_cnt;	//延迟计数
 	uint16_t 		Rx_Data;	//接收一字节
-	GPIO_TypeDef	*PORT_CS[2];//端口
-	uint16_t 		PIN_CS[2];	//引脚
+	
 	GPIO_TypeDef	*PORT_SCK;	//端口
 	uint16_t 		PIN_SCK;	//引脚
 	GPIO_TypeDef	*PORT_MISO;	//端口
 	uint16_t 		PIN_MISO;	//引脚
 	GPIO_TypeDef	*PORT_MOSI;	//端口
 	uint16_t 		PIN_MOSI;	//引脚
+	SPI_CS_Pin_t 	*CS_Pins;  	// 片选引脚数组指针
+    uint8_t 		CS_SUM;  	// 片选引脚的数量
 	
 	uint8_t (*SPI_Mode_pFunc)(struct SPI_M_Software_t *SPI_Driver,uint8_t TxData);
 	void (*Init)(struct SPI_M_Software_t *SPI_Driver);
@@ -94,14 +103,16 @@ typedef struct SPI_M_Hardware_t
 	uint16_t 		Delay_time;	//延迟时间
 	uint16_t 		Delay_cnt;	//延迟计数
 	uint16_t 		Rx_Data;	//接收一字节
-	GPIO_TypeDef	*PORT_CS[2];//端口
-	uint16_t 		PIN_CS[2];	//引脚
 	GPIO_TypeDef	*PORT_SCK;	//端口
 	uint16_t 		PIN_SCK;	//引脚
 	GPIO_TypeDef	*PORT_MISO;	//端口
 	uint16_t 		PIN_MISO;	//引脚
 	GPIO_TypeDef	*PORT_MOSI;	//端口
 	uint16_t 		PIN_MOSI;	//引脚
+	
+	SPI_CS_Pin_t 	*CS_Pins;  	// 片选引脚数组指针
+    uint8_t 		CS_SUM;  	// 片选引脚的数量
+	
 	void (*Init)(struct SPI_M_Hardware_t *SPI_Driver);
 	void (*Close)(struct SPI_M_Hardware_t *SPI_Driver,uint8_t ID);
 	uint8_t (*Open)(struct SPI_M_Hardware_t *SPI_Driver, uint8_t ID);

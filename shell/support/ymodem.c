@@ -85,6 +85,8 @@ void YModem_Recv(Queue1048_t *p)
 			YModem_ACK();
 			YModem_C();
 			ymodem.status++;
+		}else{
+			ymodem.process = UPDATE_QUIT;
 		}
 		break;
 	case 1:

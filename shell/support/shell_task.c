@@ -2803,50 +2803,8 @@ W25Q_WRITE_PROC_GROUP6:
 W25Q_WRITE_PROC_GROUP7:
 	Shell_Task.Register.R15_PC = W25Q_WRITE_PROC_GROUP0;
 	return CORE_DONE;
-}	
-
-void oled_w25qxx_task()
-{
-	enum
-	{
-		oled_w25qxx_PROC_GROUP0 = 0,
-		oled_w25qxx_PROC_GROUP1,
-		oled_w25qxx_PROC_SUM,
-	};
-	static const void *function[oled_w25qxx_PROC_SUM] = {
-		[oled_w25qxx_PROC_GROUP0] 	= &&oled_w25qxx_PROC_GROUP0,
-		[oled_w25qxx_PROC_GROUP1] 	= &&oled_w25qxx_PROC_GROUP1,
-	};
-	static int pc = 0;
-	static int index = 100;
-	goto *function[pc];
-oled_w25qxx_PROC_GROUP0:
-	if( W25QXX_Read(&W25qx, OLED_Device.OLED_GRAM,index*1024,1024) == CORE_DONE){
-		pc = oled_w25qxx_PROC_GROUP1;
-		if( index >= 5000 ){	
-			index = 100;
-		}else{
-			index++;
-		}
-	}
-	return;
-oled_w25qxx_PROC_GROUP1:
-	if(OLED_Device.Gram(&OLED_Device) == 1){
-		pc = oled_w25qxx_PROC_GROUP0;
-	}
-	return;
 }
 
-
-int do_oled_w25q_tast(int argc,char *argv[])
-{
-	oled_w25qxx_task();
-	if( KeyboardInterrupt(&Shell_Device) == 1){
-		W25qx.Reset(&W25qx);
-		return CORE_DONE;
-	}
-	return CORE_RUNNING;
-}
 
 int do_canstd(int argc,char *argv[])
 {
@@ -2958,6 +2916,191 @@ int do_canexd(int argc,char *argv[])
 	return CORE_DONE;
 }
 
+int do_canrecv(int argc,char *argv[])
+{
+	if(argc != 1){
+		printf(SHELL_CMD_ERROR);
+		return CORE_DONE;
+	}
+	for(;;){
+		if( KeyboardInterrupt(&Shell_Device) == 1){
+			return CORE_DONE;
+		}
+		if( CAN1_BUS.RX_Flag == 1){
+			CAN1_BUS.RX_Flag = 0;
+			if(CAN1_BUS.RX_Message.IDE == CAN_ID_STD){
+				printf("CAN Recv: StdId=0x%x,",CAN1_BUS.RX_Message.StdId);
+			}else{
+				printf("CAN Recv: ExtId=0x%x,",CAN1_BUS.RX_Message.ExtId);
+			}
+			printf("RTR=%d,",CAN1_BUS.RX_Message.RTR);
+			printf("DLC=%d,Data:",CAN1_BUS.RX_Message.DLC);
+			
+			for(int i = 0; i<8;i++){
+				printf("0x%x ",CAN1_BUS.RX_Message.Data[i]);
+			}
+			printf("\r\n");
+		}
+		return CORE_RUNNING;
+	}
+}
+
+
+
+int do_servo(int argc,char *argv[])
+{	
+	enum
+	{
+		SERVO_PROC_GROUP0,
+		SERVO_PROC_GROUP1,
+		SERVO_PROC_GROUP2,
+		SERVO_PROC_GROUP3,
+		SERVO_PROC_GROUP4,
+		SERVO_PROC_GROUP5,
+		SERVO_PROC_GROUP6,
+		SERVO_PROC_GROUP7,
+		SERVO_PROC_GROUP8,
+		SERVO_PROC_GROUP13,
+		SERVO_PROC_GROUP14,
+		SERVO_STATE_SUM,
+	};
+	static const void *function[SERVO_STATE_SUM] = {
+		[SERVO_PROC_GROUP0] 	= &&SERVO_PROC_GROUP0,
+		[SERVO_PROC_GROUP1] 	= &&SERVO_PROC_GROUP1,
+		[SERVO_PROC_GROUP2] 	= &&SERVO_PROC_GROUP2,
+		[SERVO_PROC_GROUP3] 	= &&SERVO_PROC_GROUP3,
+		[SERVO_PROC_GROUP4] 	= &&SERVO_PROC_GROUP4,
+		[SERVO_PROC_GROUP5] 	= &&SERVO_PROC_GROUP5,
+		[SERVO_PROC_GROUP6] 	= &&SERVO_PROC_GROUP6,
+		[SERVO_PROC_GROUP7] 	= &&SERVO_PROC_GROUP7,
+		[SERVO_PROC_GROUP8] 	= &&SERVO_PROC_GROUP8,
+		[SERVO_PROC_GROUP13] 	= &&SERVO_PROC_GROUP13,
+		[SERVO_PROC_GROUP14] 	= &&SERVO_PROC_GROUP14,
+
+	};
+	
+	goto *function[Shell_Task.Register.R15_PC];
+	
+SERVO_PROC_GROUP0:
+	if( argc == 4 || argc == 3){
+		Shell_Task.sscanf_driver.str = argv[1];
+		Shell_Task.Register.R14_LR = SERVO_PROC_GROUP2;
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP1;
+	}else{
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
+	}
+	return CORE_RUNNING;
+SERVO_PROC_GROUP1:
+	string_scanf(&Shell_Task.sscanf_driver,NULL);
+	if( Shell_Task.sscanf_driver.Register.R15_PC == CALL_SSCANF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = Shell_Task.Register.R14_LR;
+	}
+	return CORE_RUNNING;
+SERVO_PROC_GROUP2:
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
+	}else{
+		Shell_Task.Register.R5_Object = Shell_Task.sscanf_driver.Register.R0_Result;
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP3;
+	}
+	return CORE_RUNNING;
+SERVO_PROC_GROUP3:
+	if( Shell_Task.Register.R5_Object == 0){
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP4;
+	}else if( Shell_Task.Register.R5_Object == 1){
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP4;
+	}else if( Shell_Task.Register.R5_Object == 2){
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP4;
+	}else{
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
+	}
+	return CORE_RUNNING;
+SERVO_PROC_GROUP4:
+	Shell_Task.sscanf_driver.str = argv[2];
+	Shell_Task.Register.R14_LR = SERVO_PROC_GROUP5;
+	Shell_Task.Register.R15_PC = SERVO_PROC_GROUP1;
+	return CORE_RUNNING;
+SERVO_PROC_GROUP5:
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
+	}else{
+		if( Shell_Task.Register.R5_Object == 0){
+			sim_servo_angle_set(&Servo_Output0, Shell_Task.sscanf_driver.Register.R0_Result);
+		}else if( Shell_Task.Register.R5_Object == 1){
+			pwm_servo_angle_set(&Servo_Output1, Shell_Task.sscanf_driver.Register.R0_Result);
+		}else if( Shell_Task.Register.R5_Object == 2){
+			pwm_servo_angle_set(&Servo_Output2, Shell_Task.sscanf_driver.Register.R0_Result);
+		}
+		if( argc == 4){
+			Shell_Task.Register.R15_PC = SERVO_PROC_GROUP6;
+		}else{
+			if( Shell_Task.Register.R5_Object == 0){
+				Servo_Output0.Timer.TickPeroid = 1000;
+			}else if( Shell_Task.Register.R5_Object == 1){
+				Servo_Output1.Timer.TickPeroid = 1000;
+			}else if( Shell_Task.Register.R5_Object == 2){
+				Servo_Output2.Timer.TickPeroid = 1000;
+			}
+			Shell_Task.Register.R15_PC = SERVO_PROC_GROUP8;
+		}
+	}
+	return CORE_RUNNING;
+SERVO_PROC_GROUP6:
+	Shell_Task.sscanf_driver.str = argv[3];
+	Shell_Task.Register.R14_LR = SERVO_PROC_GROUP7;
+	Shell_Task.Register.R15_PC = SERVO_PROC_GROUP1;
+	return CORE_RUNNING;
+SERVO_PROC_GROUP7:	
+	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
+	}else{
+		if( Shell_Task.sscanf_driver.Register.R0_Result <= 0){
+			Shell_Task.sscanf_driver.Register.R0_Result = 2000;
+		}
+		if( Shell_Task.Register.R5_Object == 0){
+			Servo_Output0.Timer.TickPeroid = Shell_Task.sscanf_driver.Register.R0_Result;
+		}else if( Shell_Task.Register.R5_Object == 1){
+			Servo_Output1.Timer.TickPeroid = Shell_Task.sscanf_driver.Register.R0_Result;
+		}else if( Shell_Task.Register.R5_Object == 2){
+			Servo_Output2.Timer.TickPeroid = Shell_Task.sscanf_driver.Register.R0_Result;
+		}
+			
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP8;
+	}
+	return CORE_RUNNING;
+SERVO_PROC_GROUP8:
+	if( Shell_Task.Register.R5_Object == 0){
+		string_printf(&Shell_Task.fmt_driver, "\r\n## Success servo %d duty %d, angle delay %d.\r\n", Shell_Task.Register.R5_Object,Servo_Output0.target_duty,Servo_Output0.Timer.TickPeroid);
+	}else if( Shell_Task.Register.R5_Object == 1){
+		string_printf(&Shell_Task.fmt_driver, "\r\n## Success servo %d duty %d, angle delay %d.\r\n", Shell_Task.Register.R5_Object,Servo_Output1.target_duty,Servo_Output1.Timer.TickPeroid);
+	}else if( Shell_Task.Register.R5_Object == 2){
+		string_printf(&Shell_Task.fmt_driver, "\r\n## Success servo %d duty %d, angle delay %d.\r\n", Shell_Task.Register.R5_Object,Servo_Output2.target_duty,Servo_Output2.Timer.TickPeroid);
+	}
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP14;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+SERVO_PROC_GROUP13:
+	string_printf(&Shell_Task.fmt_driver, "\r\n## Unexpected exception\r\n");
+	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP14;
+		Shell_Task.Register.R1_Index = 0;
+	}
+	return CORE_RUNNING;
+SERVO_PROC_GROUP14:
+	if( Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index] != '\0'){
+		QueueDataIn(&Shell_Device.Shell_Print_Queue, (uint8_t*)&Shell_Task.fmt_driver.str[Shell_Task.Register.R1_Index]);
+		Shell_Task.Register.R1_Index++;
+	}else{
+		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP0;
+		return CORE_DONE;
+	}
+	return CORE_RUNNING;
+}
+
+
+
 void shell_Cmd_Init(Shell_Core_Class_t *Shell_Device, Usart_Bus_e Bus)
 {
 //方括号[]表示可选参数
@@ -3029,12 +3172,15 @@ void shell_Cmd_Init(Shell_Core_Class_t *Shell_Device, Usart_Bus_e Bus)
 	cmd_list_create_node(w25qwrite,"\r\nw25qwrite - addr data",do_w25q_write);
 	cmd_list_linked_list_tail(w25qwrite,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(oledw25q,"\r\noledw25q - oledw25q tast",do_oled_w25q_tast);
-	cmd_list_linked_list_tail(oledw25q,Shell_Device->Shell_List_Header);
-	
 	cmd_list_create_node(canstd,"\r\ncanstd - +id +len data*n",do_canstd);
 	cmd_list_linked_list_tail(canstd,Shell_Device->Shell_List_Header);
 	
 	cmd_list_create_node(canexd,"\r\ncanexd - +id +len data*n",do_canexd);
 	cmd_list_linked_list_tail(canexd,Shell_Device->Shell_List_Header);
+	
+	cmd_list_create_node(canrecv,"\r\ncanrecv - +canrecv data*n",do_canrecv);
+	cmd_list_linked_list_tail(canrecv,Shell_Device->Shell_List_Header);
+	
+	cmd_list_create_node(servo,"\r\nservo - servo +id +angle +speed",do_servo);
+	cmd_list_linked_list_tail(servo,Shell_Device->Shell_List_Header);
 }

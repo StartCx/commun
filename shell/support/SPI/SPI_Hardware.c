@@ -4,9 +4,9 @@
 
 uint8_t SPI_M_Hardware_Open(SPI_M_Hardware_t *SPI_Driver, uint8_t CSx)
 {
-	if( SPI_Driver->Lock == CORE_UNLOCK){
+	if( SPI_Driver->Lock == CORE_UNLOCK && CSx < SPI_Driver->CS_SUM){
 		SPI_Driver->Lock =  CORE_LOCK;
-		GPIO_SET_LOW(SPI_Driver->PORT_CS[CSx], SPI_Driver->PIN_CS[CSx]);
+		GPIO_SET_LOW(SPI_Driver->CS_Pins[CSx].GPIO_Port, SPI_Driver->CS_Pins[CSx].Pin);
 		return CORE_SUCCESS;
 	}
 	return CORE_ERROR;
@@ -17,7 +17,9 @@ uint8_t SPI_M_Hardware_Open(SPI_M_Hardware_t *SPI_Driver, uint8_t CSx)
 void SPI_M_Hardware_Close(SPI_M_Hardware_t *SPI_Driver, uint8_t CSx)
 {
 	SPI_Driver->Lock = CORE_UNLOCK;
-	GPIO_SET_HIGH(SPI_Driver->PORT_CS[CSx], SPI_Driver->PIN_CS[CSx]);
+	if( CSx < SPI_Driver->CS_SUM){
+		GPIO_SET_HIGH(SPI_Driver->CS_Pins[CSx].GPIO_Port, SPI_Driver->CS_Pins[CSx].Pin);
+	}
 }
 
 uint8_t SPI_M_Hardware_Endp(SPI_M_Hardware_t *SPI_Driver)
@@ -76,10 +78,12 @@ void SPI_M_Hardware_Config(SPI_M_Hardware_t *SPI_Driver)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	/* CS */
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[0];
-	GPIO_Init(SPI_Driver->PORT_CS[0], &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_CS[1];
-	GPIO_Init(SPI_Driver->PORT_CS[1], &GPIO_InitStructure);
+	for(uint8_t i = 0; i<SPI_Driver->CS_SUM;i++)
+	{
+		GPIO_InitStructure.GPIO_Pin = SPI_Driver->CS_Pins[i].Pin;
+		GPIO_Init(SPI_Driver->CS_Pins[i].GPIO_Port, &GPIO_InitStructure);
+		GPIO_SET_HIGH(SPI_Driver->CS_Pins[i].GPIO_Port, SPI_Driver->CS_Pins[i].Pin);
+	}
 	/* SCK */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_SCK;
@@ -91,8 +95,6 @@ void SPI_M_Hardware_Config(SPI_M_Hardware_t *SPI_Driver)
 	GPIO_InitStructure.GPIO_Pin = SPI_Driver->PIN_MISO;
 	GPIO_Init(SPI_Driver->PORT_MISO, &GPIO_InitStructure);
 
-	GPIO_SET_HIGH(SPI_Driver->PORT_CS[0], SPI_Driver->PIN_CS[0]);
-	GPIO_SET_HIGH(SPI_Driver->PORT_CS[1], SPI_Driver->PIN_CS[1]);
 	/* Ê¹ÄÜ SPI  */
 	SPI_M_Hardware_Mode(SPI_Driver, SPI_Driver->SPI_Mode);
 }

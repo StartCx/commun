@@ -17,7 +17,7 @@ extern I2C_S_Bitbang_t  I2C4_Slave;
 
 enum
 {
-	I2C1_M_HARDWARE = 1,
+	I2C1_M_HARDWARE = 0,
 	I2C2_M_BITBANG,
 	I2C3_M_SOFTWARE,
 	I2C4_S_BITBANG,

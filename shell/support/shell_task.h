@@ -22,7 +22,7 @@
 #include "w25qx.h"
 #include "at24cxx.h"
 #include "oled.h"
-
+#include "timer.h"
 
 typedef struct
 {

@@ -1,5 +1,24 @@
 #include "SPI_Config.h"
 
+#define SPI1_NUM_CS 1  // SPI1有1个片选引脚
+#define SPI2_NUM_CS 1  // SPI2有2个片选引脚
+#define SPI3_NUM_CS 1  // SPI3有2个片选引脚
+
+
+// 定义SPI1的片选引脚数组
+SPI_CS_Pin_t SPI1_CS_Pins[SPI1_NUM_CS] = {
+    {GPIOA, GPIO_Pin_15}
+};
+
+// 定义SPI2的片选引脚数组
+SPI_CS_Pin_t SPI2_CS_Pins[SPI2_NUM_CS] = {
+    {GPIOB, GPIO_Pin_12},
+};
+
+// 定义SPI3的片选引脚数组
+SPI_CS_Pin_t SPI3_CS_Pins[SPI3_NUM_CS] = {
+    {GPIOB, GPIO_Pin_3},
+};
 
 SPI_M_Hardware_t SPI1_Master = {
 	.SPIx		= SPI1,
@@ -13,10 +32,9 @@ SPI_M_Hardware_t SPI1_Master = {
 	.PIN_MISO  	= GPIO_Pin_6,
 	.PORT_MOSI 	= GPIOA,
 	.PIN_MOSI  	= GPIO_Pin_7,
-	.PORT_CS[0] = GPIOB,
-	.PIN_CS[0]  = GPIO_Pin_0,
-	.PORT_CS[1] = GPIOB,
-	.PIN_CS[1]  = GPIO_Pin_1,
+	
+	.CS_Pins 	= SPI1_CS_Pins,
+	.CS_SUM		= SPI1_NUM_CS,
 	
 	.Init			= SPI_M_Hardware_Config,
 	.WriteAndRead	= SPI_M_Hardware_WriteAndRead,
@@ -38,10 +56,9 @@ SPI_M_Bitbang_t SPI2_Master = {
 	.PIN_MISO  = GPIO_Pin_14,
 	.PORT_MOSI = GPIOB,
 	.PIN_MOSI  = GPIO_Pin_15,
-	.PORT_CS[0] = GPIOB,
-	.PIN_CS[0]  = GPIO_Pin_12,
-	.PORT_CS[1] = GPIOA,
-	.PIN_CS[1]  = GPIO_Pin_8,
+	
+	.CS_Pins 	= SPI2_CS_Pins,
+	.CS_SUM		= SPI2_NUM_CS,
 	
 	.Init			= SPI_M_Bitbang_Config,
 	.Driver			= SPI_M_Bitbang_Peripheral,
@@ -67,10 +84,9 @@ SPI_M_Software_t SPI3_Master = {
 	.PIN_MISO  	= GPIO_Pin_15,
 	.PORT_MOSI 	= GPIOA,
 	.PIN_MOSI  	= GPIO_Pin_4,
-	.PORT_CS[0] = GPIOB,
-	.PIN_CS[0]  = GPIO_Pin_3,
-	.PORT_CS[1] = GPIOA,
-	.PIN_CS[1]  = GPIO_Pin_15,
+	
+	.CS_Pins 	= SPI3_CS_Pins,
+	.CS_SUM		= SPI3_NUM_CS,
 	
 	.Init			= SPI_M_Software_Config,
 	.WriteAndRead	= SPI_M_Software_WriteAndRead,
