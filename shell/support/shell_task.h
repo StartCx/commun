@@ -52,7 +52,20 @@ typedef struct
 
 extern Shell_Core_Class_t Shell_Device;
 
-extern void shell_Cmd_Init(Shell_Core_Class_t *Shell_Device, Usart_Bus_e Bus);
+extern void shell_Cmd_Init(Shell_Core_Class_t *Shell_Device);
 
 
 #endif
+
+
+
+//Shell_Device->Bus = Bus;
+//if( Shell_Device->Bus == USART1_BUS){
+//	Shell_Device->USARTx= USART1;
+//	Shell_Device->Get  	= shell_Getchar_IT;
+//	Shell_Device->Put  	= shell_Putchar;
+//}else if( Shell_Device->Bus == SIMUL1_BUS){
+//	Shell_Device->SIM_UART_Driver = &SIM_UART;
+//	Shell_Device->Get  	= shell_SIM_Uart_Getchar;
+//	Shell_Device->Put  	= shell_SIM_Uart_Putchar;
+//}

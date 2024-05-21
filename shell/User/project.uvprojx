@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_MD,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\HARDWARE;..\Libraries\STM32F10x_StdPeriph_Driver;..\Libraries\STM32_USB-FS-Device_Driver;..\SYSTEM;..\User;..\bsp;..\support;..\Device;..\support\I2C;..\support\SPI;..\support\SPI</IncludePath>
+              <IncludePath>..\CORE;..\HARDWARE;..\Libraries\STM32F10x_StdPeriph_Driver;..\Libraries\STM32_USB-FS-Device_Driver;..\SYSTEM;..\User;..\bsp;..\support;..\Device;..\support\I2C;..\support\SPI;..\support\SPI;..\support\Protocol</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -601,6 +601,11 @@
               <FileName>simulated_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\support\simulated_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>serial_protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\support\protocol\serial_protocol.c</FilePath>
             </File>
           </Files>
         </Group>

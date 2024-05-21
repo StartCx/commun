@@ -3009,8 +3009,6 @@ SERVO_PROC_GROUP3:
 		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP4;
 	}else if( Shell_Task.Register.R5_Object == 1){
 		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP4;
-	}else if( Shell_Task.Register.R5_Object == 2){
-		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP4;
 	}else{
 		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
 	}
@@ -3028,8 +3026,6 @@ SERVO_PROC_GROUP5:
 			sim_servo_angle_set(&Servo_Output0, Shell_Task.sscanf_driver.Register.R0_Result);
 		}else if( Shell_Task.Register.R5_Object == 1){
 			pwm_servo_angle_set(&Servo_Output1, Shell_Task.sscanf_driver.Register.R0_Result);
-		}else if( Shell_Task.Register.R5_Object == 2){
-			pwm_servo_angle_set(&Servo_Output2, Shell_Task.sscanf_driver.Register.R0_Result);
 		}
 		if( argc == 4){
 			Shell_Task.Register.R15_PC = SERVO_PROC_GROUP6;
@@ -3038,8 +3034,6 @@ SERVO_PROC_GROUP5:
 				Servo_Output0.Timer.TickPeroid = 1000;
 			}else if( Shell_Task.Register.R5_Object == 1){
 				Servo_Output1.Timer.TickPeroid = 1000;
-			}else if( Shell_Task.Register.R5_Object == 2){
-				Servo_Output2.Timer.TickPeroid = 1000;
 			}
 			Shell_Task.Register.R15_PC = SERVO_PROC_GROUP8;
 		}
@@ -3054,15 +3048,10 @@ SERVO_PROC_GROUP7:
 	if( Shell_Task.sscanf_driver.Register.R9_Error == CORE_ERROR){
 		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP13;
 	}else{
-		if( Shell_Task.sscanf_driver.Register.R0_Result <= 0){
-			Shell_Task.sscanf_driver.Register.R0_Result = 2000;
-		}
 		if( Shell_Task.Register.R5_Object == 0){
 			Servo_Output0.Timer.TickPeroid = Shell_Task.sscanf_driver.Register.R0_Result;
 		}else if( Shell_Task.Register.R5_Object == 1){
 			Servo_Output1.Timer.TickPeroid = Shell_Task.sscanf_driver.Register.R0_Result;
-		}else if( Shell_Task.Register.R5_Object == 2){
-			Servo_Output2.Timer.TickPeroid = Shell_Task.sscanf_driver.Register.R0_Result;
 		}
 			
 		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP8;
@@ -3073,8 +3062,6 @@ SERVO_PROC_GROUP8:
 		string_printf(&Shell_Task.fmt_driver, "\r\n## Success servo %d duty %d, angle delay %d.\r\n", Shell_Task.Register.R5_Object,Servo_Output0.target_duty,Servo_Output0.Timer.TickPeroid);
 	}else if( Shell_Task.Register.R5_Object == 1){
 		string_printf(&Shell_Task.fmt_driver, "\r\n## Success servo %d duty %d, angle delay %d.\r\n", Shell_Task.Register.R5_Object,Servo_Output1.target_duty,Servo_Output1.Timer.TickPeroid);
-	}else if( Shell_Task.Register.R5_Object == 2){
-		string_printf(&Shell_Task.fmt_driver, "\r\n## Success servo %d duty %d, angle delay %d.\r\n", Shell_Task.Register.R5_Object,Servo_Output2.target_duty,Servo_Output2.Timer.TickPeroid);
 	}
 	if( Shell_Task.fmt_driver.Register.R15_PC == CALL_SPRINTF_PROC_ENDP){
 		Shell_Task.Register.R15_PC = SERVO_PROC_GROUP14;
@@ -3101,20 +3088,14 @@ SERVO_PROC_GROUP14:
 
 
 
-void shell_Cmd_Init(Shell_Core_Class_t *Shell_Device, Usart_Bus_e Bus)
+void shell_Cmd_Init(Shell_Core_Class_t *Shell_Device)
 {
 //方括号[]表示可选参数
 //尖括号<>表示必选参数
-	Shell_Device->Bus = Bus;
-	if( Shell_Device->Bus == USART1_BUS){
-		Shell_Device->USARTx= USART1;
-		Shell_Device->Get  	= shell_Getchar_IT;
-		Shell_Device->Put  	= shell_Putchar;
-	}else if( Shell_Device->Bus == SIMUL1_BUS){
-		Shell_Device->SIM_UART_Driver = &SIM_UART;
-		Shell_Device->Get  	= shell_SIM_Uart_Getchar;
-		Shell_Device->Put  	= shell_SIM_Uart_Putchar;
-	}
+
+	Shell_Device->SIM_UART_Driver = &SIM_UART;
+	Shell_Device->Get  	= shell_SIM_Uart_Getchar;
+	Shell_Device->Put  	= shell_SIM_Uart_Putchar;
 	
 	INIT_LIST_HEAD(&Shell_Device->Shell_List_Header);
 	
@@ -3145,16 +3126,16 @@ void shell_Cmd_Init(Shell_Core_Class_t *Shell_Device, Usart_Bus_e Bus)
 	cmd_list_create_node(i2cwrite,"\r\ni2cwrite - +bus +addr +value *n",do_i2cwrite);
 	cmd_list_linked_list_tail(i2cwrite,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(i2cread,"\r\ni2cread - +bus +addr +value *n",do_i2cread);
+	cmd_list_create_node(i2cread,"\r\ni2cread - +bus +addr +read_length",do_i2cread);
 	cmd_list_linked_list_tail(i2cread,Shell_Device->Shell_List_Header);
 	
 	cmd_list_create_node(reboot,"\r\nreboot - soft reboot",do_reboot);
 	cmd_list_linked_list_tail(reboot,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(adc,"\r\nadc - PB0 PB1 Volt",do_adc);
+	cmd_list_create_node(adc,"\r\nadc - PA0 PA1 Volt",do_adc);
 	cmd_list_linked_list_tail(adc,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(spi,"\r\nspi - +bus +cs tx buf*n rx_length",do_spi);
+	cmd_list_create_node(spi,"\r\nspi - +bus +cs +tx buf*n +rx_length",do_spi);
 	cmd_list_linked_list_tail(spi,Shell_Device->Shell_List_Header);
 	
 	cmd_list_create_node(ymodem,"\r\nymodem 0 irom flash and 1 spi flash and 2 eeprom",do_ymodem);
@@ -3172,10 +3153,10 @@ void shell_Cmd_Init(Shell_Core_Class_t *Shell_Device, Usart_Bus_e Bus)
 	cmd_list_create_node(w25qwrite,"\r\nw25qwrite - addr data",do_w25q_write);
 	cmd_list_linked_list_tail(w25qwrite,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(canstd,"\r\ncanstd - +id +len data*n",do_canstd);
+	cmd_list_create_node(canstd,"\r\ncanstd - +id +len +data*n",do_canstd);
 	cmd_list_linked_list_tail(canstd,Shell_Device->Shell_List_Header);
 	
-	cmd_list_create_node(canexd,"\r\ncanexd - +id +len data*n",do_canexd);
+	cmd_list_create_node(canexd,"\r\ncanexd - +id +len +data*n",do_canexd);
 	cmd_list_linked_list_tail(canexd,Shell_Device->Shell_List_Header);
 	
 	cmd_list_create_node(canrecv,"\r\ncanrecv - +canrecv data*n",do_canrecv);

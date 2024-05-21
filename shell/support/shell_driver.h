@@ -143,7 +143,6 @@ typedef struct
 typedef struct Shell_Core_Class_t
 {
 	//属性
-	uint8_t 			Bus;				//定义串口编号
 	USART_TypeDef 		*USARTx;			//寄存器串口地址
 	struct list_head 	Shell_List_Header;	//命令链表头
 	Queue512_t 			Shell_Print_Queue;	//串口打印缓存
@@ -156,7 +155,7 @@ typedef struct Shell_Core_Class_t
 	Timer_t				Timer;				//时间定时器
 	SIM_UART_Driver_t 	*SIM_UART_Driver;	//模拟串口
 	//方法
-	void (*Init)(struct Shell_Core_Class_t *Shell, Usart_Bus_e Bus);
+	void (*Init)(struct Shell_Core_Class_t *Shell);
 	void (*Get)(struct Shell_Core_Class_t *Shell);
 	void (*Put)(struct Shell_Core_Class_t *Shell);
 	void (*Driver)(struct Shell_Core_Class_t *Shell);

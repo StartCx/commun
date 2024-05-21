@@ -53,15 +53,11 @@ void TIM3_Configuration(void)
 	GPIO_InitTypeDef GPIO_InitStructure;
 	TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
 	// 输出比较通道4 GPIO 初始化
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_0;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_1;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
 	
 	TIM_TimeBaseStructure.TIM_Period=2000-1;	
 	TIM_TimeBaseStructure.TIM_Prescaler= 720-1;	
@@ -77,11 +73,6 @@ void TIM3_Configuration(void)
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 	
 	// 输出比较通道 3
-	TIM_OCInitStructure.TIM_Pulse = 50;
-	TIM_OC3Init(TIM3, &TIM_OCInitStructure);
-	TIM_OC3PreloadConfig(TIM3, TIM_OCPreload_Enable);
-	
-	// 输出比较通道 4
 	TIM_OCInitStructure.TIM_Pulse = 50;
 	TIM_OC4Init(TIM3, &TIM_OCInitStructure);
 	TIM_OC4PreloadConfig(TIM3, TIM_OCPreload_Enable);

@@ -30,7 +30,6 @@ typedef struct
 
 extern Sim_Servo_Output_t Servo_Output0;
 extern PWM_Servo_Output_t Servo_Output1;
-extern PWM_Servo_Output_t Servo_Output2;
 
 void SIM_Servo_GPIO_Init(Sim_Servo_Output_t * Servo_Output);
 void sim_servo_angle_set(Sim_Servo_Output_t *Servo_Output, uint16_t duty);

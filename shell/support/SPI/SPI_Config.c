@@ -1,7 +1,7 @@
 #include "SPI_Config.h"
 
 #define SPI1_NUM_CS 1  // SPI1有1个片选引脚
-#define SPI2_NUM_CS 1  // SPI2有2个片选引脚
+#define SPI2_NUM_CS 2  // SPI2有2个片选引脚
 #define SPI3_NUM_CS 1  // SPI3有2个片选引脚
 
 
@@ -13,6 +13,7 @@ SPI_CS_Pin_t SPI1_CS_Pins[SPI1_NUM_CS] = {
 // 定义SPI2的片选引脚数组
 SPI_CS_Pin_t SPI2_CS_Pins[SPI2_NUM_CS] = {
     {GPIOB, GPIO_Pin_12},
+	{GPIOA, GPIO_Pin_8},
 };
 
 // 定义SPI3的片选引脚数组

@@ -5,8 +5,8 @@ Sim_Servo_Output_t Servo_Output0 = {
 	.period = 2000, //10us一次，20000us = 20ms，周期。
 	.target_duty = 50,
 	.cur_duty    = 50,
-	.GPIOx  	= GPIOA,
-	.GPIO_Pin 	= GPIO_Pin_8,
+	.GPIOx  	= GPIOB,
+	.GPIO_Pin 	= GPIO_Pin_0,
 	.Timer = {
 		.TickPeroid = 500,//10*1000等于10ms执行一次。
 	},
@@ -16,24 +16,13 @@ PWM_Servo_Output_t Servo_Output1 = {
 	.target_duty = 50,
 	.cur_duty    = 50,
 	.GPIOx  	= GPIOB,
-	.GPIO_Pin 	= GPIO_Pin_0,
-	.Timer = {
-		.TickPeroid = 500,//10*1000等于10ms执行一次。
-	},
-	.TIM_SetCompare = TIM_SetCompare3,
-};
-
-
-PWM_Servo_Output_t Servo_Output2 = {
-	.target_duty = 50,
-	.cur_duty    = 50,
-	.GPIOx  	= GPIOB,
 	.GPIO_Pin 	= GPIO_Pin_1,
 	.Timer = {
 		.TickPeroid = 500,//10*1000等于10ms执行一次。
 	},
 	.TIM_SetCompare = TIM_SetCompare4,
 };
+
 
 void SIM_Servo_GPIO_Init(Sim_Servo_Output_t * Servo_Output)
 {
@@ -48,10 +37,13 @@ void SIM_Servo_GPIO_Init(Sim_Servo_Output_t * Servo_Output)
 
 void sim_servo_angle_set(Sim_Servo_Output_t *Servo_Output, uint16_t duty)
 {
-	Servo_Output->target_duty = 50+(200*duty)/180;
+	Servo_Output->target_duty = duty;
 }
 
-
+void pwm_servo_angle_set(PWM_Servo_Output_t *Servo_Output, uint16_t duty)
+{
+	Servo_Output->target_duty = duty;
+}
 
 void sim_servo_output_angle_task(Sim_Servo_Output_t *Servo_Output)
 {
@@ -93,7 +85,3 @@ LABEL:
 	Servo_Output->TIM_SetCompare(TIM3,Servo_Output->cur_duty);	   //设置舵机占空比，控制舵机转动
 }
 
-void pwm_servo_angle_set(PWM_Servo_Output_t *Servo_Output, uint16_t duty)
-{
-	Servo_Output->target_duty = 50+(200*duty)/180;
-}

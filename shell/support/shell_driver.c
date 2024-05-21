@@ -1,7 +1,7 @@
 #include "shell_driver.h"
 
 
-extern void shell_Cmd_Init(Shell_Core_Class_t *Shell, Usart_Bus_e Bus);
+extern void shell_Cmd_Init(Shell_Core_Class_t *Shell);
 
 Shell_Core_Class_t Shell_Device = {
 	.Shell_Driver = {
