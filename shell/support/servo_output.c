@@ -5,12 +5,14 @@ Sim_Servo_Output_t Servo_Output0 = {
 	.period = 2000, //10us一次，20000us = 20ms，周期。
 	.target_duty = 50,
 	.cur_duty    = 50,
+	.shadow_reg	 = 50,
 	.GPIOx  	= GPIOB,
 	.GPIO_Pin 	= GPIO_Pin_0,
 	.Timer = {
 		.TickPeroid = 500,//10*1000等于10ms执行一次。
 	},
 };
+
 
 PWM_Servo_Output_t Servo_Output1 = {
 	.target_duty = 50,
@@ -47,10 +49,11 @@ void pwm_servo_angle_set(PWM_Servo_Output_t *Servo_Output, uint16_t duty)
 
 void sim_servo_output_angle_task(Sim_Servo_Output_t *Servo_Output)
 {
-	if( Servo_Output->count == 0){
-		Servo_Output->count = Servo_Output->period;//10us*2000 = 20ms
+	if( Servo_Output->count == Servo_Output->period){//10us*2000 = 20ms
+		Servo_Output->count = 0;
+		Servo_Output->cur_duty = Servo_Output->shadow_reg;
 	}else{
-		Servo_Output->count--;
+		Servo_Output->count++;
 	}
 	if( Servo_Output->count < Servo_Output->cur_duty){
 		GPIO_SET_HIGH(Servo_Output->GPIOx, Servo_Output->GPIO_Pin);
@@ -62,10 +65,10 @@ void sim_servo_output_angle_task(Sim_Servo_Output_t *Servo_Output)
 
 void sim_servo_output_speed_task(Sim_Servo_Output_t *Servo_Output)
 {
-	if( Servo_Output->cur_duty < Servo_Output->target_duty){
-		Servo_Output->cur_duty++;
-	}else if( Servo_Output->cur_duty > Servo_Output->target_duty){
-		Servo_Output->cur_duty--;
+	if( Servo_Output->shadow_reg < Servo_Output->target_duty){
+		Servo_Output->shadow_reg++;
+	}else if( Servo_Output->shadow_reg > Servo_Output->target_duty){
+		Servo_Output->shadow_reg--;
 	}
 }
 

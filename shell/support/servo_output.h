@@ -11,6 +11,7 @@ typedef struct
 	uint16_t 		GPIO_Pin;	//引脚
 	uint16_t 		target_duty;//目标占空比
 	uint16_t 		cur_duty;	//当前占空比
+	uint16_t 		shadow_reg;	//影子寄存器
 	uint16_t 		period;		//周期
 	uint16_t 		count;		//周期计数器
 	Timer_t			Timer;

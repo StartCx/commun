@@ -4,7 +4,7 @@
 
 I2C_M_Hardware_t I2C1_Master = {
 	.I2Cx		= I2C1,
-	.I2C_Speed	= 30000,//50k
+	.I2C_Speed	= 100000,//20k
 	.Delay_time	= 100,
 	.Lock 		= CORE_UNLOCK,
 	.PORT_SCL  	= GPIOB,
