@@ -32,3 +32,10 @@ shell使用模拟串口
 
 自定义协议使用串口1
 
+
+
+需要添加：
+1. gpio_output 需要添加 shadow_reg;
+2. simulate_pwm 需要添加shadow_reg;
+   
+
